@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CloudKitchen Pro — The Future of Food</title>
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Neue+Montreal:wght@300;400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0b;--surface:#111114;--surface2:#18181d;--border:#ffffff12;
+  --text:#f4f0e8;--muted:#8a8680;--accent:#ff6b35;--accent2:#ffd166;
+  --green:#06d6a0;--blue:#118ab2;--pink:#ef476f;
+  --grad:linear-gradient(135deg,#ff6b35,#ffd166);
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow-x:hidden;cursor:none}
+
+/* CURSOR */
+.cursor{position:fixed;width:12px;height:12px;background:var(--accent);border-radius:50%;pointer-events:none;z-index:9999;transition:transform 0.1s;mix-blend-mode:difference}
+.cursor-follow{position:fixed;width:40px;height:40px;border:1px solid var(--accent);border-radius:50%;pointer-events:none;z-index:9998;transition:all 0.15s ease}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:20px 60px;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(20px);background:rgba(10,10,11,0.8);border-bottom:1px solid var(--border)}
+.logo{display:flex;align-items:center;gap:12px;text-decoration:none}
+.logo-icon{width:40px;height:40px;background:var(--grad);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--text)}
+.logo-text span{color:var(--accent)}
+.nav-links{display:flex;gap:40px;list-style:none}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:color 0.3s;letter-spacing:0.5px}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{display:flex;gap:12px}
+.btn-outline{padding:10px 22px;border:1px solid var(--border);border-radius:8px;color:var(--text);text-decoration:none;font-size:14px;transition:all 0.3s}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-primary{padding:10px 22px;background:var(--accent);border-radius:8px;color:#fff;text-decoration:none;font-size:14px;font-weight:600;transition:all 0.3s}
+.btn-primary:hover{background:#ff8a5b;transform:translateY(-1px)}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:120px 60px 80px}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(255,107,53,0.12) 0%,transparent 70%)}
+.grid-lines{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:80px 80px;opacity:0.4}
+.hero-orb{position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(255,107,53,0.15),transparent 70%);top:-100px;right:-100px;animation:pulse 6s ease-in-out infinite}
+.hero-orb2{position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(255,209,102,0.1),transparent 70%);bottom:-50px;left:-50px;animation:pulse 8s ease-in-out infinite reverse}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:0.7}50%{transform:scale(1.1);opacity:1}}
+.hero-content{position:relative;z-index:2;text-align:center;max-width:900px}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.3);border-radius:100px;font-size:13px;color:var(--accent);margin-bottom:32px;animation:fadeUp 0.8s ease forwards}
+.hero-badge::before{content:'';width:6px;height:6px;background:var(--accent);border-radius:50%;animation:blink 1.5s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.hero h1{font-family:'Syne',sans-serif;font-size:clamp(52px,8vw,92px);font-weight:800;line-height:1.0;letter-spacing:-3px;margin-bottom:24px;animation:fadeUp 0.8s 0.1s ease both}
+.hero h1 .line2{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:18px;color:var(--muted);max-width:580px;margin:0 auto 48px;line-height:1.7;animation:fadeUp 0.8s 0.2s ease both}
+.hero-actions{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;animation:fadeUp 0.8s 0.3s ease both}
+.btn-hero{padding:16px 36px;border-radius:12px;font-size:16px;font-weight:600;text-decoration:none;transition:all 0.3s;display:flex;align-items:center;gap:8px}
+.btn-hero-primary{background:var(--grad);color:#fff}
+.btn-hero-primary:hover{transform:translateY(-2px);box-shadow:0 20px 40px rgba(255,107,53,0.3)}
+.btn-hero-secondary{border:1px solid var(--border);color:var(--text);background:rgba(255,255,255,0.03)}
+.btn-hero-secondary:hover{border-color:var(--accent);transform:translateY(-2px)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+
+/* STATS TICKER */
+.stats-bar{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:20px 0;overflow:hidden}
+.stats-track{display:flex;gap:80px;animation:scroll 20s linear infinite;width:max-content}
+.stat-item{display:flex;align-items:center;gap:12px;white-space:nowrap}
+.stat-num{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent)}
+.stat-label{font-size:13px;color:var(--muted)}
+.stat-divider{color:var(--border)}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* FLOATING CARDS */
+.floating-cards{position:absolute;right:60px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:16px;z-index:2}
+.float-card{background:rgba(24,24,29,0.9);border:1px solid var(--border);border-radius:16px;padding:16px 20px;backdrop-filter:blur(20px);min-width:220px;animation:float 3s ease-in-out infinite}
+.float-card:nth-child(2){animation-delay:1s}
+.float-card:nth-child(3){animation-delay:2s}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.fc-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.fc-dot{width:8px;height:8px;border-radius:50%}
+.fc-dot.green{background:var(--green)}
+.fc-dot.orange{background:var(--accent)}
+.fc-dot.blue{background:var(--blue)}
+.fc-title{font-size:12px;color:var(--muted);font-weight:500}
+.fc-value{font-family:'Syne',sans-serif;font-size:20px;font-weight:700}
+.fc-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.fc-progress{height:4px;background:var(--surface2);border-radius:100px;margin-top:10px}
+.fc-bar{height:100%;border-radius:100px;background:var(--grad)}
+
+/* FEATURES SECTION */
+.section{padding:100px 60px}
+.section-label{font-size:12px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:16px}
+.section-title{font-family:'Syne',sans-serif;font-size:clamp(36px,5vw,60px);font-weight:800;letter-spacing:-2px;line-height:1.1;margin-bottom:20px}
+.section-sub{font-size:17px;color:var(--muted);max-width:520px;line-height:1.7}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:64px}
+.feature-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:36px;transition:all 0.4s;position:relative;overflow:hidden}
+.feature-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;transition:opacity 0.4s}
+.feature-card:hover{border-color:rgba(255,107,53,0.3);transform:translateY(-4px);background:var(--surface2)}
+.feature-card:hover::before{opacity:1}
+.feature-icon{width:52px;height:52px;border-radius:14px;background:rgba(255,107,53,0.1);display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:24px}
+.feature-card h3{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:12px}
+.feature-card p{font-size:14px;color:var(--muted);line-height:1.7}
+.feature-tag{display:inline-flex;align-items:center;gap:6px;margin-top:20px;padding:6px 12px;background:rgba(255,107,53,0.08);border-radius:100px;font-size:12px;color:var(--accent)}
+
+/* ROLES SECTION */
+.roles-section{padding:100px 60px;background:var(--surface)}
+.roles-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-top:60px}
+.role-card{border-radius:20px;padding:28px 20px;text-align:center;border:1px solid var(--border);position:relative;overflow:hidden;transition:all 0.4s;cursor:pointer;text-decoration:none;display:block;color:var(--text)}
+.role-card::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,107,53,0.1),transparent);opacity:0;transition:opacity 0.4s}
+.role-card:hover{transform:translateY(-6px);border-color:var(--accent)}
+.role-card:hover::after{opacity:1}
+.role-emoji{font-size:48px;display:block;margin-bottom:16px}
+.role-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px}
+.role-desc{font-size:12px;color:var(--muted);line-height:1.6}
+.role-tag{display:inline-block;margin-top:14px;padding:4px 12px;border-radius:100px;font-size:11px;font-weight:600}
+
+/* PROCESS */
+.process{padding:100px 60px;position:relative}
+.process-line{position:absolute;top:50%;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent)}
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:24px;margin-top:60px;position:relative}
+.step{text-align:center;position:relative}
+.step-num{width:52px;height:52px;border-radius:50%;background:var(--bg);border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--accent);margin:0 auto 20px;position:relative;z-index:2}
+.step-connector{position:absolute;top:26px;left:50%;right:-50%;height:1px;background:var(--border);z-index:1}
+.step:last-child .step-connector{display:none}
+.step h4{font-size:15px;font-weight:600;margin-bottom:8px}
+.step p{font-size:13px;color:var(--muted)}
+
+/* AI SECTION */
+.ai-section{padding:100px 60px;background:linear-gradient(135deg,rgba(255,107,53,0.05),rgba(255,209,102,0.03))}
+.ai-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;margin-top:60px}
+.ai-visual{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:32px;overflow:hidden}
+.ai-header{display:flex;align-items:center;gap:10px;margin-bottom:24px}
+.ai-indicator{width:8px;height:8px;background:var(--green);border-radius:50%;animation:blink 1s ease-in-out infinite}
+.ai-title{font-size:13px;color:var(--muted)}
+.ai-metrics{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.metric{background:var(--bg);border-radius:12px;padding:16px}
+.metric-label{font-size:11px;color:var(--muted);margin-bottom:6px}
+.metric-val{font-family:'Syne',sans-serif;font-size:24px;font-weight:800}
+.metric-val.orange{color:var(--accent)}
+.metric-val.green{color:var(--green)}
+.metric-val.blue{color:var(--blue)}
+.metric-val.pink{color:var(--pink)}
+.ai-chart{height:80px;display:flex;align-items:flex-end;gap:4px}
+.bar{background:var(--grad);border-radius:4px 4px 0 0;flex:1;transition:height 0.5s ease}
+.ai-features{display:flex;flex-direction:column;gap:20px}
+.ai-feature{display:flex;gap:16px;align-items:flex-start}
+.ai-feature-icon{width:44px;height:44px;border-radius:12px;background:rgba(255,107,53,0.1);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.ai-feature h4{font-size:16px;font-weight:600;margin-bottom:6px}
+.ai-feature p{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* CTA SECTION */
+.cta-section{padding:120px 60px;text-align:center;position:relative;overflow:hidden}
+.cta-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 50%,rgba(255,107,53,0.1) 0%,transparent 70%)}
+.cta-section h2{font-family:'Syne',sans-serif;font-size:clamp(44px,6vw,80px);font-weight:800;letter-spacing:-3px;position:relative;z-index:2;margin-bottom:20px}
+.cta-section p{font-size:18px;color:var(--muted);max-width:500px;margin:0 auto 48px;position:relative;z-index:2}
+.cta-buttons{display:flex;gap:16px;justify-content:center;position:relative;z-index:2}
+
+/* FOOTER */
+footer{background:var(--surface);border-top:1px solid var(--border);padding:60px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:60px}
+.footer-brand .logo{margin-bottom:16px}
+.footer-brand p{font-size:14px;color:var(--muted);line-height:1.7;max-width:280px}
+.footer-col h5{font-size:13px;font-weight:600;margin-bottom:20px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.footer-col ul{list-style:none}
+.footer-col ul li{margin-bottom:12px}
+.footer-col ul li a{color:var(--muted);text-decoration:none;font-size:14px;transition:color 0.3s}
+.footer-col ul li a:hover{color:var(--text)}
+.footer-bottom{border-top:1px solid var(--border);padding:24px 60px;display:flex;justify-content:space-between;align-items:center}
+.footer-bottom p{font-size:13px;color:var(--muted)}
+
+/* NOTIFICATION TOAST */
+.toast{position:fixed;bottom:30px;right:30px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:12px;font-size:14px;z-index:1000;transform:translateY(80px);opacity:0;transition:all 0.4s;max-width:320px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0}
+
+/* SCROLL ANIMATIONS */
+.reveal{opacity:0;transform:translateY(40px);transition:all 0.8s cubic-bezier(0.16,1,0.3,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+@media(max-width:1024px){
+  .floating-cards{display:none}
+  .features-grid{grid-template-columns:1fr 1fr}
+  .roles-grid{grid-template-columns:repeat(3,1fr)}
+  .ai-grid{grid-template-columns:1fr;gap:40px}
+  footer{grid-template-columns:1fr 1fr;gap:40px}
+}
+@media(max-width:768px){
+  nav{padding:16px 24px}
+  .nav-links{display:none}
+  .hero{padding:100px 24px 60px}
+  .section,.roles-section,.process,.ai-section,.cta-section{padding:80px 24px}
+  .features-grid{grid-template-columns:1fr}
+  .roles-grid{grid-template-columns:1fr 1fr}
+  .steps{grid-template-columns:1fr;gap:16px}
+  footer{grid-template-columns:1fr;gap:40px}
+  .footer-bottom{flex-direction:column;gap:8px;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-follow" id="cursorFollow"></div>
+
+<nav>
+  <a href="/" class="logo">
+    <div class="logo-icon">🔥</div>
+    <div class="logo-text">Cloud<span>Kitchen</span> Pro</div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#roles">Roles</a></li>
+    <li><a href="#ai">AI Engine</a></li>
+    <li><a href="#process">How It Works</a></li>
+  </ul>
+  <div class="nav-cta">
+    <a href="/login" class="btn-outline">Sign In</a>
+    <a href="/register" class="btn-primary">Get Started →</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="grid-lines"></div>
+  <div class="hero-orb"></div>
+  <div class="hero-orb2"></div>
+  <div class="hero-content">
+    <div class="hero-badge">🚀 Next-Gen Cloud Kitchen Platform</div>
+    <h1>Manage Every<br><span class="line2">Cloud Kitchen</span><br>at Scale</h1>
+    <p>The AI-powered operating system for modern cloud kitchens. From order to delivery — everything connected, everything intelligent.</p>
+    <div class="hero-actions">
+      <a href="/register" class="btn-hero btn-hero-primary">🍽️ Start Free Trial</a>
+      <a href="/login" class="btn-hero btn-hero-secondary">📊 View Dashboard</a>
+    </div>
+  </div>
+  <div class="floating-cards">
+    <div class="float-card">
+      <div class="fc-header"><div class="fc-dot green"></div><span class="fc-title">Live Orders</span></div>
+      <div class="fc-value">1,247</div>
+      <div class="fc-sub">↑ 23% from yesterday</div>
+      <div class="fc-progress"><div class="fc-bar" style="width:78%"></div></div>
+    </div>
+    <div class="float-card">
+      <div class="fc-header"><div class="fc-dot orange"></div><span class="fc-title">Revenue Today</span></div>
+      <div class="fc-value">₹84,320</div>
+      <div class="fc-sub">Across 12 kitchens</div>
+      <div class="fc-progress"><div class="fc-bar" style="width:65%"></div></div>
+    </div>
+    <div class="float-card">
+      <div class="fc-header"><div class="fc-dot blue"></div><span class="fc-title">Avg. Delivery</span></div>
+      <div class="fc-value">24 min</div>
+      <div class="fc-sub">↓ 3 min optimized by AI</div>
+      <div class="fc-progress"><div class="fc-bar" style="width:88%"></div></div>
+    </div>
+  </div>
+</section>
+
+<div class="stats-bar">
+  <div class="stats-track" id="statsTrack">
+    <div class="stat-item"><span class="stat-num">50K+</span><span class="stat-label">Daily Orders</span></div>
+    <div class="stat-divider">◆</div>
+    <div class="stat-item"><span class="stat-num">500+</span><span class="stat-label">Cloud Kitchens</span></div>
+    <div class="stat-divider">◆</div>
+    <div class="stat-item"><span class="stat-num">₹2Cr+</span><span class="stat-label">Daily Revenue</span></div>
+    <div class="stat-divider">◆</div>
+    <div class="stat-item"><span class="stat-num">99.9%</span><span class="stat-label">Uptime SLA</span></div>
+    <div class="stat-divider">◆</div>
+    <div class="stat-item"><span class="stat-num">4.8★</span><span class="stat-label">Avg Rating</span></div>
+    <div class="stat-divider">◆</div>
+    <div class="stat-item"><span class="stat-num">24min</span><span class="stat-label">Avg Delivery</span></div>
+    <div class="stat-divider">◆</div>
+    <div class="stat-item"><span class="stat-num">50K+</span><span class="stat-label">Daily Orders</span></div>
+    <div class="stat-divider">◆</div>
+    <div class="stat-item"><span class="stat-num">500+</span><span class="stat-label">Cloud Kitchens</span></div>
+    <div class="stat-divider">◆</div>
+    <div class="stat-item"><span class="stat-num">₹2Cr+</span><span class="stat-label">Daily Revenue</span></div>
+    <div class="stat-divider">◆</div>
+    <div class="stat-item"><span class="stat-num">99.9%</span><span class="stat-label">Uptime SLA</span></div>
+    <div class="stat-divider">◆</div>
+    <div class="stat-item"><span class="stat-num">4.8★</span><span class="stat-label">Avg Rating</span></div>
+    <div class="stat-divider">◆</div>
+    <div class="stat-item"><span class="stat-num">24min</span><span class="stat-label">Avg Delivery</span></div>
+  </div>
+</div>
+
+<section id="features" class="section">
+  <div class="section-label">Platform Capabilities</div>
+  <h2 class="section-title">Everything your<br>kitchen needs</h2>
+  <p class="section-sub">Nine powerful modules for each role — intelligently connected across your entire kitchen network.</p>
+  <div class="features-grid">
+    <div class="feature-card reveal">
+      <div class="feature-icon">📊</div>
+      <h3>Real-Time Analytics</h3>
+      <p>Live dashboards with revenue forecasting, demand prediction, and kitchen performance metrics updated every second.</p>
+      <div class="feature-tag">🤖 AI-Powered</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">📦</div>
+      <h3>Smart Inventory</h3>
+      <p>Auto-detect low stock, predict reorder needs, track expiry dates, and get AI-driven procurement suggestions.</p>
+      <div class="feature-tag">⚡ Automated</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">🗺️</div>
+      <h3>Route Optimization</h3>
+      <p>AI-optimized delivery routes that adapt to real-time traffic, cutting delivery times by up to 35%.</p>
+      <div class="feature-tag">🚀 Live Routing</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">🍽️</div>
+      <h3>Dynamic Menu Engine</h3>
+      <p>Real-time menu availability, dynamic pricing based on demand hours, and personalized recommendation engine.</p>
+      <div class="feature-tag">💡 Smart Pricing</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">👥</div>
+      <h3>Staff Scheduling</h3>
+      <p>Intelligent shift scheduling, performance tracking, and workload balancing across all kitchen staff roles.</p>
+      <div class="feature-tag">📅 Auto-Schedule</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">💳</div>
+      <h3>Payment & Loyalty</h3>
+      <p>Unified payment gateway, loyalty points system, coupon management, and automated payout tracking.</p>
+      <div class="feature-tag">🔒 Secure</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">⭐</div>
+      <h3>Review Intelligence</h3>
+      <p>AI sentiment analysis on reviews, automated response suggestions, and reputation score management.</p>
+      <div class="feature-tag">😊 Sentiment AI</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">🔔</div>
+      <h3>Real-Time Notifications</h3>
+      <p>WebSocket-powered live order updates, push notifications, and cross-role communication system.</p>
+      <div class="feature-tag">⚡ WebSocket</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">🏪</div>
+      <h3>Multi-Brand Management</h3>
+      <p>Run multiple virtual brands from one kitchen. Independent menus, pricing, and analytics per brand.</p>
+      <div class="feature-tag">🌐 Multi-Cloud</div>
+    </div>
+  </div>
+</section>
+
+<section id="roles" class="roles-section">
+  <div style="text-align:center">
+    <div class="section-label">Five Role System</div>
+    <h2 class="section-title">Built for every<br>team member</h2>
+  </div>
+  <div class="roles-grid">
+    <a href="/login" class="role-card reveal" style="background:linear-gradient(135deg,rgba(255,107,53,0.08),transparent)">
+      <span class="role-emoji">👑</span>
+      <div class="role-name">Super Admin</div>
+      <div class="role-desc">Platform-wide control, kitchen network management, revenue analytics, and user oversight</div>
+      <span class="role-tag" style="background:rgba(255,107,53,0.2);color:var(--accent)">Platform Owner</span>
+    </a>
+    <a href="/login" class="role-card reveal" style="background:linear-gradient(135deg,rgba(255,209,102,0.08),transparent)">
+      <span class="role-emoji">🏪</span>
+      <div class="role-name">Kitchen Manager</div>
+      <div class="role-desc">Brand-level control: menu, inventory, staff scheduling, orders, and kitchen analytics</div>
+      <span class="role-tag" style="background:rgba(255,209,102,0.2);color:var(--accent2)">Brand Admin</span>
+    </a>
+    <a href="/login" class="role-card reveal" style="background:linear-gradient(135deg,rgba(6,214,160,0.08),transparent)">
+      <span class="role-emoji">👨‍🍳</span>
+      <div class="role-name">Chef / Kitchen Staff</div>
+      <div class="role-desc">Order queue management, recipe access, inventory checks, and performance tracking</div>
+      <span class="role-tag" style="background:rgba(6,214,160,0.2);color:var(--green)">Kitchen Staff</span>
+    </a>
+    <a href="/login" class="role-card reveal" style="background:linear-gradient(135deg,rgba(17,138,178,0.08),transparent)">
+      <span class="role-emoji">🚴</span>
+      <div class="role-name">Delivery Agent</div>
+      <div class="role-desc">Smart order pickup, AI route optimization, earnings tracking, and delivery status updates</div>
+      <span class="role-tag" style="background:rgba(17,138,178,0.2);color:var(--blue)">On The Road</span>
+    </a>
+    <a href="/register" class="role-card reveal" style="background:linear-gradient(135deg,rgba(239,71,111,0.08),transparent)">
+      <span class="role-emoji">👤</span>
+      <div class="role-name">Customer</div>
+      <div class="role-desc">Browse kitchens, personalized AI recommendations, real-time tracking, loyalty rewards</div>
+      <span class="role-tag" style="background:rgba(239,71,111,0.2);color:var(--pink)">Order & Enjoy</span>
+    </a>
+  </div>
+</section>
+
+<section id="process" class="process">
+  <div style="text-align:center">
+    <div class="section-label">Order Flow</div>
+    <h2 class="section-title">From order to<br>delivery in minutes</h2>
+  </div>
+  <div class="steps">
+    <div class="step reveal">
+      <div class="step-num">01<div class="step-connector"></div></div>
+      <h4>Customer Orders</h4>
+      <p>AI recommends best dishes based on preferences</p>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">02<div class="step-connector"></div></div>
+      <h4>Kitchen Confirms</h4>
+      <p>Smart queue prioritization by AI score</p>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">03<div class="step-connector"></div></div>
+      <h4>Chef Prepares</h4>
+      <p>Recipe-guided prep with real-time timer</p>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">04<div class="step-connector"></div></div>
+      <h4>Agent Picks Up</h4>
+      <p>Optimized route assigned automatically</p>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">05</div>
+      <h4>Delivered! 🎉</h4>
+      <p>Loyalty points awarded, review requested</p>
+    </div>
+  </div>
+</section>
+
+<section id="ai" class="ai-section">
+  <div class="ai-grid">
+    <div>
+      <div class="section-label">AI & Machine Learning</div>
+      <h2 class="section-title">Intelligence built<br>into every layer</h2>
+      <p class="section-sub" style="margin-bottom:40px">Our AI engine processes thousands of data points in real-time to optimize every aspect of kitchen operations.</p>
+      <div class="ai-features">
+        <div class="ai-feature reveal">
+          <div class="ai-feature-icon">📈</div>
+          <div>
+            <h4>Demand Forecasting</h4>
+            <p>Predicts order volumes 7 days ahead using historical patterns, weather, and local events.</p>
+          </div>
+        </div>
+        <div class="ai-feature reveal">
+          <div class="ai-feature-icon">🎯</div>
+          <div>
+            <h4>Personalized Recommendations</h4>
+            <p>Collaborative filtering recommends dishes based on order history and similar customer behavior.</p>
+          </div>
+        </div>
+        <div class="ai-feature reveal">
+          <div class="ai-feature-icon">💰</div>
+          <div>
+            <h4>Dynamic Pricing</h4>
+            <p>Adjusts prices during peak hours to maximize revenue while maintaining customer satisfaction.</p>
+          </div>
+        </div>
+        <div class="ai-feature reveal">
+          <div class="ai-feature-icon">😊</div>
+          <div>
+            <h4>Sentiment Analysis</h4>
+            <p>Analyzes customer reviews in real-time to flag issues and identify strengths automatically.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ai-visual reveal">
+      <div class="ai-header">
+        <div class="ai-indicator"></div>
+        <span class="ai-title">AI Analytics Dashboard — Live</span>
+      </div>
+      <div class="ai-metrics">
+        <div class="metric"><div class="metric-label">Demand Score</div><div class="metric-val orange">94.2</div></div>
+        <div class="metric"><div class="metric-label">Revenue Pred.</div><div class="metric-val green">₹82K</div></div>
+        <div class="metric"><div class="metric-label">Satisfaction</div><div class="metric-val blue">4.8★</div></div>
+        <div class="metric"><div class="metric-label">AI Accuracy</div><div class="metric-val pink">97.3%</div></div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">7-Day Revenue Forecast</div>
+      <div class="ai-chart" id="aiChart"></div>
+      <div style="margin-top:16px;padding:12px;background:rgba(6,214,160,0.08);border-radius:10px;border:1px solid rgba(6,214,160,0.2)">
+        <div style="font-size:12px;color:var(--green);font-weight:600">🤖 AI Insight</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px">Demand spike expected Saturday 7–9 PM. Recommend +15% stock for Butter Chicken.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="cta-bg"></div>
+  <h2>Ready to transform<br>your <span style="background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent">cloud kitchen?</span></h2>
+  <p>Join 500+ kitchens already using CloudKitchen Pro to serve better, faster, smarter.</p>
+  <div class="cta-buttons">
+    <a href="/register" class="btn-hero btn-hero-primary">🚀 Get Started Free</a>
+    <a href="/login" class="btn-hero btn-hero-secondary">🔑 Sign In</a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-brand">
+    <a href="/" class="logo">
+      <div class="logo-icon">🔥</div>
+      <div class="logo-text">Cloud<span>Kitchen</span> Pro</div>
+    </a>
+    <p>The complete operating system for modern cloud kitchen businesses. AI-powered, fully connected, always on.</p>
+  </div>
+  <div class="footer-col">
+    <h5>Platform</h5>
+    <ul>
+      <li><a href="#">Analytics</a></li>
+      <li><a href="#">Inventory</a></li>
+      <li><a href="#">Delivery</a></li>
+      <li><a href="#">AI Engine</a></li>
+    </ul>
+  </div>
+  <div class="footer-col">
+    <h5>Roles</h5>
+    <ul>
+      <li><a href="/login">Super Admin</a></li>
+      <li><a href="/login">Kitchen Manager</a></li>
+      <li><a href="/login">Chef Portal</a></li>
+      <li><a href="/register">Customer App</a></li>
+    </ul>
+  </div>
+  <div class="footer-col">
+    <h5>Company</h5>
+    <ul>
+      <li><a href="#">About</a></li>
+      <li><a href="#">Pricing</a></li>
+      <li><a href="#">Blog</a></li>
+      <li><a href="#">Contact</a></li>
+    </ul>
+  </div>
+</footer>
+<div style="background:var(--surface);border-top:1px solid var(--border);padding:20px 60px;display:flex;justify-content:space-between;align-items:center">
+  <p style="font-size:13px;color:var(--muted)">© 2024 CloudKitchen Pro. Built with ❤️ for the future of food.</p>
+  <p style="font-size:13px;color:var(--muted)">Flask • SQLite • AI/ML • WebSockets</p>
+</div>
+
+<div class="toast" id="toast">
+  <div class="toast-dot"></div>
+  <div><strong>New order placed!</strong> Spice Route Kitchen — ₹480</div>
+</div>
+
+<script>
+// Cursor
+const cursor = document.getElementById('cursor');
+const cursorFollow = document.getElementById('cursorFollow');
+let mouseX=0,mouseY=0,followX=0,followY=0;
+document.addEventListener('mousemove',e=>{
+  mouseX=e.clientX; mouseY=e.clientY;
+  cursor.style.left=mouseX-6+'px'; cursor.style.top=mouseY-6+'px';
+});
+function animateFollow(){
+  followX += (mouseX - followX) * 0.12;
+  followY += (mouseY - followY) * 0.12;
+  cursorFollow.style.left=followX-20+'px'; cursorFollow.style.top=followY-20+'px';
+  requestAnimationFrame(animateFollow);
+}
+animateFollow();
+
+// Reveal on scroll
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach((e,i)=>{if(e.isIntersecting){setTimeout(()=>e.target.classList.add('visible'),i*80)}});
+},{threshold:0.1});
+reveals.forEach(r=>observer.observe(r));
+
+// AI Chart
+const chart = document.getElementById('aiChart');
+const vals = [65,72,68,85,90,78,95];
+vals.forEach(v=>{
+  const bar = document.createElement('div');
+  bar.className = 'bar';
+  bar.style.height = v+'%';
+  chart.appendChild(bar);
+});
+
+// Toast notification simulation
+setTimeout(()=>{
+  document.getElementById('toast').classList.add('show');
+  setTimeout(()=>document.getElementById('toast').classList.remove('show'),4000);
+},3000);
+
+// More toast notifications
+const messages = [
+  ['Order Delivered! ✅','Dragon Wok — 24 min delivery'],
+  ['Kitchen Alert 🔔','Low stock: Chicken at Spice Route'],
+  ['New Review ⭐','4.9 stars — "Amazing biryani!"'],
+];
+let msgIdx = 0;
+setInterval(()=>{
+  const [title, body] = messages[msgIdx % messages.length];
+  const toast = document.getElementById('toast');
+  toast.querySelector('strong').textContent = title;
+  toast.querySelector('div:last-child').innerHTML = `<strong>${title}</strong> ${body}`;
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),3500);
+  msgIdx++;
+},7000);
+</script>
+</body>
+</html>

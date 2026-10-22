@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In — CloudKitchen Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0b;--surface:#111114;--surface2:#18181d;--border:#ffffff12;--text:#f4f0e8;--muted:#8a8680;--accent:#ff6b35;--accent2:#ffd166;--green:#06d6a0;--grad:linear-gradient(135deg,#ff6b35,#ffd166)}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;display:grid;grid-template-columns:1fr 1fr}
+.left-panel{position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:40px;background:var(--surface);border-right:1px solid var(--border)}
+.left-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 70% at 30% 50%,rgba(255,107,53,0.15) 0%,transparent 70%)}
+.grid-overlay{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:60px 60px;opacity:0.5}
+.left-content{position:relative;z-index:2}
+.logo{display:flex;align-items:center;gap:12px;text-decoration:none;margin-bottom:60px}
+.logo-icon{width:44px;height:44px;background:var(--grad);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--text)}
+.logo-text span{color:var(--accent)}
+.panel-headline{font-family:'Syne',sans-serif;font-size:42px;font-weight:800;letter-spacing:-2px;line-height:1.1;margin-bottom:20px}
+.panel-headline span{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.panel-sub{font-size:16px;color:var(--muted);line-height:1.7;max-width:380px;margin-bottom:48px}
+.role-pills{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:48px}
+.role-pill{padding:8px 16px;border:1px solid var(--border);border-radius:100px;font-size:13px;display:flex;align-items:center;gap:8px;transition:all 0.3s;cursor:pointer}
+.role-pill:hover,.role-pill.active{border-color:var(--accent);background:rgba(255,107,53,0.1);color:var(--accent)}
+.testimonial{background:rgba(24,24,29,0.8);border:1px solid var(--border);border-radius:16px;padding:24px;backdrop-filter:blur(10px)}
+.test-text{font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:16px;font-style:italic}
+.test-author{display:flex;align-items:center;gap:12px}
+.test-avatar{width:36px;height:36px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:16px}
+.test-name{font-size:14px;font-weight:600}
+.test-role{font-size:12px;color:var(--muted)}
+.left-bottom{position:relative;z-index:2;display:flex;gap:40px}
+.stat{text-align:center}
+.stat-n{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--accent)}
+.stat-l{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* RIGHT PANEL */
+.right-panel{display:flex;align-items:center;justify-content:center;padding:60px 80px}
+.login-box{width:100%;max-width:420px}
+.login-box h2{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;margin-bottom:8px}
+.login-box p{color:var(--muted);margin-bottom:40px;font-size:15px}
+.tabs{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:32px}
+.tab{flex:1;padding:10px;text-align:center;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.3s;color:var(--muted)}
+.tab.active{background:var(--accent);color:#fff}
+.demo-accounts{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:28px}
+.demo-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.demo-btn{padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;transition:all 0.3s;color:var(--text);display:flex;align-items:center;gap:6px}
+.demo-btn:hover{border-color:var(--accent);background:rgba(255,107,53,0.1);color:var(--accent)}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px}
+.form-input{width:100%;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;transition:all 0.3s;outline:none}
+.form-input:focus{border-color:var(--accent);background:var(--surface2)}
+.form-input::placeholder{color:var(--muted)}
+.forgot{text-align:right;margin-top:8px}
+.forgot a{font-size:13px;color:var(--accent);text-decoration:none}
+.btn-login{width:100%;padding:16px;background:var(--grad);border:none;border-radius:12px;font-size:16px;font-weight:700;color:#fff;cursor:pointer;transition:all 0.3s;font-family:'DM Sans',sans-serif;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-login:hover{transform:translateY(-2px);box-shadow:0 20px 40px rgba(255,107,53,0.3)}
+.btn-login:active{transform:translateY(0)}
+.divider{display:flex;align-items:center;gap:16px;margin:24px 0;color:var(--muted);font-size:13px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.register-link{text-align:center;font-size:14px;color:var(--muted)}
+.register-link a{color:var(--accent);text-decoration:none;font-weight:600}
+.error-msg{background:rgba(239,71,111,0.1);border:1px solid rgba(239,71,111,0.3);border-radius:8px;padding:12px 16px;font-size:13px;color:#ef476f;margin-bottom:16px;display:none}
+.success-msg{background:rgba(6,214,160,0.1);border:1px solid rgba(6,214,160,0.3);border-radius:8px;padding:12px 16px;font-size:13px;color:var(--green);margin-bottom:16px;display:none}
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:900px){
+  body{grid-template-columns:1fr}
+  .left-panel{display:none}
+  .right-panel{padding:40px 24px}
+}
+</style>
+</head>
+<body>
+<div class="left-panel">
+  <div class="left-bg"></div>
+  <div class="grid-overlay"></div>
+  <div class="left-content">
+    <a href="/" class="logo"><div class="logo-icon">🔥</div><div class="logo-text">Cloud<span>Kitchen</span> Pro</div></a>
+    <h2 class="panel-headline">Welcome<br>back to<br><span>the future</span></h2>
+    <p class="panel-sub">Sign in to your role dashboard and manage your cloud kitchen operations with AI-powered intelligence.</p>
+    <div class="role-pills">
+      <div class="role-pill active">👑 Super Admin</div>
+      <div class="role-pill">🏪 Kitchen Manager</div>
+      <div class="role-pill">👨‍🍳 Chef</div>
+      <div class="role-pill">🚴 Delivery</div>
+      <div class="role-pill">👤 Customer</div>
+    </div>
+    <div class="testimonial">
+      <div class="test-text">"CloudKitchen Pro transformed our operations. We're serving 40% more orders with the same team thanks to the AI prioritization."</div>
+      <div class="test-author">
+        <div class="test-avatar">👑</div>
+        <div><div class="test-name">Arjun Sharma</div><div class="test-role">Super Admin · CloudKitchen Pro</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="left-bottom">
+    <div class="stat"><div class="stat-n">500+</div><div class="stat-l">Kitchens</div></div>
+    <div class="stat"><div class="stat-n">50K+</div><div class="stat-l">Daily Orders</div></div>
+    <div class="stat"><div class="stat-n">4.8★</div><div class="stat-l">Avg Rating</div></div>
+    <div class="stat"><div class="stat-n">24min</div><div class="stat-l">Avg Delivery</div></div>
+  </div>
+</div>
+
+<div class="right-panel">
+  <div class="login-box">
+    <h2>Sign In</h2>
+    <p>Access your role-specific dashboard</p>
+    <div class="demo-accounts">
+      <div class="demo-title">⚡ Quick Demo Login</div>
+      <div class="demo-grid">
+        <button class="demo-btn" onclick="fillDemo('admin@cloudkitchen.com','Admin@123')">👑 Super Admin</button>
+        <button class="demo-btn" onclick="fillDemo('kitchen1@cloudkitchen.com','Kitchen@123')">🏪 Kitchen Mgr</button>
+        <button class="demo-btn" onclick="fillDemo('chef1@cloudkitchen.com','Chef@123')">👨‍🍳 Chef</button>
+        <button class="demo-btn" onclick="fillDemo('delivery1@cloudkitchen.com','Delivery@123')">🚴 Delivery</button>
+        <button class="demo-btn" onclick="fillDemo('customer1@cloudkitchen.com','Customer@123')">👤 Customer</button>
+        <button class="demo-btn" onclick="fillDemo('kitchen2@cloudkitchen.com','Kitchen@123')">🏪 Kitchen 2</button>
+      </div>
+    </div>
+    <div class="error-msg" id="errorMsg">❌ Invalid email or password. Please try again.</div>
+    <div class="success-msg" id="successMsg">✅ Login successful! Redirecting...</div>
+    <div class="form-group">
+      <label>Email Address</label>
+      <input type="email" class="form-input" id="email" placeholder="your@email.com">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" class="form-input" id="password" placeholder="••••••••">
+      <div class="forgot"><a href="#">Forgot password?</a></div>
+    </div>
+    <button class="btn-login" onclick="login()" id="loginBtn">
+      <div class="spinner" id="spinner"></div>
+      <span id="btnText">Sign In →</span>
+    </button>
+    <div class="divider">or</div>
+    <div class="register-link">Don't have an account? <a href="/register">Create one →</a></div>
+  </div>
+</div>
+
+<script>
+function fillDemo(email, password) {
+  document.getElementById('email').value = email;
+  document.getElementById('password').value = password;
+}
+
+async function login() {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('loginBtn');
+  const spinner = document.getElementById('spinner');
+  const btnText = document.getElementById('btnText');
+  const errorMsg = document.getElementById('errorMsg');
+  const successMsg = document.getElementById('successMsg');
+  if (!email || !password) { errorMsg.style.display='block'; errorMsg.textContent='❌ Please fill in all fields.'; return; }
+  btn.disabled=true; spinner.style.display='block'; btnText.textContent='Signing in...';
+  errorMsg.style.display='none'; successMsg.style.display='none';
+  try {
+    const res = await fetch('/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email, password})
+    });
+    const data = await res.json();
+    if (data.success) {
+      successMsg.style.display='block';
+      setTimeout(()=>window.location.href=data.redirect, 800);
+    } else {
+      errorMsg.style.display='block'; errorMsg.textContent='❌ ' + (data.error || 'Invalid credentials');
+      btn.disabled=false; spinner.style.display='none'; btnText.textContent='Sign In →';
+    }
+  } catch(e) {
+    errorMsg.style.display='block'; errorMsg.textContent='❌ Connection error. Please try again.';
+    btn.disabled=false; spinner.style.display='none'; btnText.textContent='Sign In →';
+  }
+}
+
+document.addEventListener('keydown', e => { if(e.key==='Enter') login(); });
+
+// Role pill animation
+document.querySelectorAll('.role-pill').forEach(p=>{
+  p.addEventListener('click',function(){
+    document.querySelectorAll('.role-pill').forEach(x=>x.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

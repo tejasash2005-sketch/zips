@@ -1,0 +1,298 @@
+{% extends "dashboards/base.html" %}
+{% block title %}Chef Dashboard{% endblock %}
+{% block page_title %}Kitchen Station{% endblock %}
+{% block page_subtitle %}Your live order queue & kitchen operations{% endblock %}
+
+{% block nav_items %}
+<div class="nav-section">
+  <div class="nav-section-label">Live Kitchen</div>
+  <div class="nav-item active" onclick="switchModule('mod-queue',this)"><span class="nav-icon">🔴</span>Order Queue<span class="nav-badge" id="queueBadge">0</span></div>
+  <div class="nav-item" onclick="switchModule('mod-orders',this)"><span class="nav-icon">🛍️</span>All Orders</div>
+</div>
+<div class="nav-section">
+  <div class="nav-section-label">Kitchen Tools</div>
+  <div class="nav-item" onclick="switchModule('mod-recipes',this)"><span class="nav-icon">📖</span>Recipe Book</div>
+  <div class="nav-item" onclick="switchModule('mod-inventory',this)"><span class="nav-icon">📦</span>Stock Check</div>
+  <div class="nav-item" onclick="switchModule('mod-timers',this)"><span class="nav-icon">⏱️</span>Kitchen Timers</div>
+</div>
+<div class="nav-section">
+  <div class="nav-section-label">Personal</div>
+  <div class="nav-item" onclick="switchModule('mod-performance',this)"><span class="nav-icon">📊</span>Performance</div>
+  <div class="nav-item" onclick="switchModule('mod-schedule',this)"><span class="nav-icon">📅</span>My Schedule</div>
+  <div class="nav-item" onclick="switchModule('mod-earnings',this)"><span class="nav-icon">💰</span>Earnings</div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- ORDER QUEUE -->
+<div class="module-content active" id="mod-queue">
+  <div class="stat-grid g4" style="margin-bottom:24px">
+    <div class="stat-card orange"><div class="stat-icon">⏳</div><div class="stat-label">In Queue</div><div class="stat-val" id="q-count">—</div></div>
+    <div class="stat-card blue"><div class="stat-icon">🍳</div><div class="stat-label">Preparing</div><div class="stat-val" id="q-preparing">—</div></div>
+    <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-label">Done Today</div><div class="stat-val" id="q-done">0</div></div>
+    <div class="stat-card yellow"><div class="stat-icon">⏱️</div><div class="stat-label">Avg Prep Time</div><div class="stat-val" id="q-avgtime">—</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div>
+      <div class="panel-header" style="background:var(--surface);border:1px solid var(--border);border-radius:12px 12px 0 0;padding:16px 20px"><span class="panel-title">⏳ Confirmed — Awaiting Prep</span><span class="live-badge"><div class="live-dot"></div>Live</span></div>
+      <div id="confirmedList" style="background:var(--surface);border:1px solid var(--border);border-radius:0 0 12px 12px;border-top:none;min-height:300px;max-height:500px;overflow-y:auto"></div>
+    </div>
+    <div>
+      <div class="panel-header" style="background:var(--surface);border:1px solid var(--border);border-radius:12px 12px 0 0;padding:16px 20px"><span class="panel-title">🍳 Currently Preparing</span></div>
+      <div id="preparingList" style="background:var(--surface);border:1px solid var(--border);border-radius:0 0 12px 12px;border-top:none;min-height:300px;max-height:500px;overflow-y:auto"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ALL ORDERS -->
+<div class="module-content" id="mod-orders">
+  <div class="panel"><div class="panel-body" style="padding:0"><table><thead><tr><th>Order #</th><th>Items</th><th>Total</th><th>Status</th><th>Instructions</th><th>Time</th></tr></thead><tbody id="allOrdersTable"></tbody></table></div></div>
+</div>
+
+<!-- RECIPE BOOK -->
+<div class="module-content" id="mod-recipes">
+  <div class="flex-between mb2">
+    <div class="search-bar"><span>🔍</span><input type="text" id="recipeSearch" placeholder="Search recipes..." oninput="filterRecipes()"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px" id="recipesGrid"></div>
+</div>
+
+<!-- STOCK CHECK -->
+<div class="module-content" id="mod-inventory">
+  <div class="panel"><div class="panel-header"><span class="panel-title">📦 Current Stock Levels</span><span style="font-size:12px;color:var(--muted)">Read-only view</span></div>
+  <div class="panel-body" style="padding:0"><table><thead><tr><th>Item</th><th>Stock</th><th>Unit</th><th>Status</th></tr></thead><tbody id="stockTable"></tbody></table></div></div>
+  <div class="panel" style="margin-top:20px"><div class="panel-header"><span class="panel-title">⚠️ Critical Alerts</span></div><div class="panel-body" id="stockAlerts"></div></div>
+</div>
+
+<!-- KITCHEN TIMERS -->
+<div class="module-content" id="mod-timers">
+  <div style="margin-bottom:24px">
+    <h3 style="font-family:'Syne',sans-serif;margin-bottom:16px">⏱️ Kitchen Timers</h3>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px">
+      <button class="btn btn-primary" onclick="addTimer(5,'5 min')">+5 min</button>
+      <button class="btn btn-primary" onclick="addTimer(10,'10 min')">+10 min</button>
+      <button class="btn btn-primary" onclick="addTimer(15,'15 min')">+15 min</button>
+      <button class="btn btn-primary" onclick="addTimer(20,'20 min')">+20 min</button>
+      <button class="btn btn-primary" onclick="addTimer(30,'30 min')">+30 min</button>
+      <button class="btn btn-outline" onclick="addCustomTimer()">⌨️ Custom</button>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px" id="timersGrid">
+    <div class="empty" style="grid-column:1/-1"><div class="empty-icon">⏱️</div><div class="empty-text">No active timers. Add one above.</div></div>
+  </div>
+  <div class="panel" style="margin-top:24px">
+    <div class="panel-header"><span class="panel-title">🍽️ Quick Prep Times Reference</span></div>
+    <div class="panel-body"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px" id="prepRef"></div></div>
+  </div>
+</div>
+
+<!-- PERFORMANCE -->
+<div class="module-content" id="mod-performance">
+  <div class="stat-grid g4" style="margin-bottom:24px">
+    <div class="stat-card orange"><div class="stat-icon">✅</div><div class="stat-label">Today Completed</div><div class="stat-val" id="p-today">—</div></div>
+    <div class="stat-card green"><div class="stat-icon">⚡</div><div class="stat-label">Avg Prep Time</div><div class="stat-val" id="p-prep">—</div></div>
+    <div class="stat-card blue"><div class="stat-icon">🎯</div><div class="stat-label">Accuracy Rate</div><div class="stat-val" id="p-acc">—</div></div>
+    <div class="stat-card yellow"><div class="stat-icon">⭐</div><div class="stat-label">Chef Rating</div><div class="stat-val" id="p-rating">—</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div class="panel"><div class="panel-header"><span class="panel-title">📊 Weekly Output</span></div><div class="panel-body"><div class="chart-wrap"><canvas id="weekChart"></canvas></div></div></div>
+    <div class="panel"><div class="panel-header"><span class="panel-title">🍽️ Items Cooked Today</span></div><div class="panel-body" id="itemsCooked"></div></div>
+  </div>
+</div>
+
+<!-- SCHEDULE -->
+<div class="module-content" id="mod-schedule">
+  <div class="panel"><div class="panel-header"><span class="panel-title">📅 My Upcoming Shifts</span></div>
+  <div class="panel-body" id="mySchedule"></div></div>
+</div>
+
+<!-- EARNINGS -->
+<div class="module-content" id="mod-earnings">
+  <div class="stat-grid g3" style="margin-bottom:24px">
+    <div class="stat-card green"><div class="stat-icon">💰</div><div class="stat-label">This Month</div><div class="stat-val" id="e-month">₹18,500</div></div>
+    <div class="stat-card orange"><div class="stat-icon">📅</div><div class="stat-label">This Week</div><div class="stat-val" id="e-week">₹4,200</div></div>
+    <div class="stat-card blue"><div class="stat-icon">🏦</div><div class="stat-label">Pending Payout</div><div class="stat-val" id="e-pending">₹2,100</div></div>
+  </div>
+  <div class="panel"><div class="panel-header"><span class="panel-title">💰 Earnings Breakdown</span></div>
+  <div class="panel-body"><div class="chart-wrap"><canvas id="earningsChart"></canvas></div></div></div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let timers = [], timerInterval, doneCount = 0, allRecipes = [];
+
+async function loadQueue() {
+  const orders = await fetch('/api/chef/orders').then(r=>r.json());
+  const confirmed = orders.filter(o=>o.status==='confirmed');
+  const preparing = orders.filter(o=>o.status==='preparing');
+  document.getElementById('q-count').textContent = confirmed.length;
+  document.getElementById('q-preparing').textContent = preparing.length;
+  document.getElementById('queueBadge').textContent = confirmed.length + preparing.length;
+
+  const perf = await fetch('/api/chef/performance').then(r=>r.json());
+  document.getElementById('q-done').textContent = perf.today_completed;
+  document.getElementById('q-avgtime').textContent = perf.avg_prep_time + ' min';
+
+  renderConfirmed(confirmed);
+  renderPreparing(preparing);
+}
+
+function renderConfirmed(orders) {
+  const el = document.getElementById('confirmedList');
+  if(!orders.length){el.innerHTML='<div class="empty" style="padding:40px"><div class="empty-icon">✅</div><div class="empty-text">Queue empty!</div></div>';return;}
+  el.innerHTML = orders.map(o=>`
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <div style="font-weight:700;color:var(--accent)">${o.order_number}</div>
+        <div style="font-size:12px;padding:3px 10px;background:rgba(255,209,102,0.15);border-radius:100px;color:var(--accent2)">Priority: ${Math.round((o.ai_priority_score||0.5)*10)}/10</div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">${Array.isArray(o.items)?o.items.map(i=>`${i.name} ×${i.quantity}`).join(' · '):'—'}</div>
+      ${o.special_instructions?`<div style="font-size:11px;background:rgba(255,107,53,0.08);border-radius:6px;padding:6px 10px;margin-bottom:10px;color:var(--accent)">📝 ${o.special_instructions}</div>`:''}
+      <button class="btn btn-primary" style="width:100%" onclick="startPreparing(${o.id},'${o.order_number}')">🍳 Start Preparing</button>
+    </div>`).join('');
+}
+
+function renderPreparing(orders) {
+  const el = document.getElementById('preparingList');
+  if(!orders.length){el.innerHTML='<div class="empty" style="padding:40px"><div class="empty-icon">🍳</div><div class="empty-text">Nothing cooking right now</div></div>';return;}
+  el.innerHTML = orders.map(o=>`
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(255,107,53,0.03)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <div style="font-weight:700;color:var(--accent)">${o.order_number}</div>
+        <div style="font-size:12px;color:var(--muted)">Est. ${o.estimated_time} min</div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px">${Array.isArray(o.items)?o.items.map(i=>`${i.name} ×${i.quantity}`).join(' · '):'—'}</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-success" style="flex:1" onclick="markReady(${o.id})">📦 Mark Ready</button>
+        <button class="btn btn-outline btn-sm" onclick="addTimer(o.estimated_time,'Order ${o.order_number}')">⏱️ Timer</button>
+      </div>
+    </div>`).join('');
+}
+
+async function startPreparing(id, num) {
+  await fetch(`/api/chef/order/${id}/status`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'preparing'})});
+  showToast('🍳 Cooking!',`Order ${num} — started preparing`,'success');
+  loadQueue();
+  addTimer(20, `Order ${num}`);
+}
+
+async function markReady(id) {
+  await fetch(`/api/chef/order/${id}/status`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'ready'})});
+  doneCount++;
+  document.getElementById('q-done').textContent = doneCount;
+  showToast('✅ Ready!','Order is ready for pickup','success');
+  loadQueue();
+}
+
+async function loadAllOrders() {
+  const orders = await fetch('/api/chef/orders').then(r=>r.json());
+  document.getElementById('allOrdersTable').innerHTML = orders.length ? orders.map(o=>`<tr><td style="font-weight:700;color:var(--accent)">${o.order_number}</td><td style="font-size:12px">${Array.isArray(o.items)?o.items.map(i=>`${i.name}×${i.quantity}`).join(', '):'—'}</td><td>${fmtCurrency(o.total)}</td><td><span class="badge ${o.status}">${o.status}</span></td><td style="font-size:12px;color:var(--muted);max-width:150px">${o.special_instructions||'—'}</td><td style="font-size:12px;color:var(--muted)">${new Date(o.created_at).toLocaleTimeString()}</td></tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">No orders</td></tr>';
+}
+
+async function loadRecipes() {
+  allRecipes = await fetch('/api/chef/recipes').then(r=>r.json());
+  renderRecipes(allRecipes);
+  document.getElementById('prepRef').innerHTML = allRecipes.slice(0,6).map(r=>`<div style="padding:12px;background:var(--surface2);border-radius:10px;text-align:center"><div style="font-size:24px;margin-bottom:6px">${r.image_emoji}</div><div style="font-size:12px;font-weight:600;margin-bottom:4px">${r.name}</div><div style="font-size:11px;color:var(--accent)">⏱ ${r.prep_time} min</div></div>`).join('');
+}
+
+function renderRecipes(items) {
+  document.getElementById('recipesGrid').innerHTML = items.map(r=>`
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;cursor:pointer;transition:all 0.3s" onmouseenter="this.style.borderColor='rgba(255,107,53,0.4)'" onmouseleave="this.style.borderColor='var(--border)'">
+      <div style="font-size:40px;margin-bottom:12px;text-align:center">${r.image_emoji}</div>
+      <div style="font-weight:700;font-size:15px;margin-bottom:6px;text-align:center">${r.name}</div>
+      <div style="display:flex;justify-content:space-around;margin-top:12px">
+        <div style="text-align:center"><div style="font-size:11px;color:var(--muted)">Prep Time</div><div style="font-size:14px;font-weight:700;color:var(--accent)">${r.prep_time}min</div></div>
+        <div style="text-align:center"><div style="font-size:11px;color:var(--muted)">Calories</div><div style="font-size:14px;font-weight:700;color:var(--blue)">${r.calories}</div></div>
+        <div style="text-align:center"><div style="font-size:11px;color:var(--muted)">Category</div><div style="font-size:11px;color:var(--muted);margin-top:3px">${r.category}</div></div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="addTimer(${r.prep_time},'${r.name}')">⏱️ Start Timer</button>
+    </div>`).join('');
+}
+
+function filterRecipes() {
+  const q = document.getElementById('recipeSearch').value.toLowerCase();
+  renderRecipes(allRecipes.filter(r=>r.name.toLowerCase().includes(q)||r.category.toLowerCase().includes(q)));
+}
+
+async function loadInventory() {
+  const data = await fetch('/api/chef/inventory-check').then(r=>r.json());
+  document.getElementById('stockTable').innerHTML = data.items.map(i=>`<tr><td style="font-weight:600">${i.name}</td><td><span style="font-weight:700;color:${i.is_low?'var(--pink)':'var(--green)'}">${i.quantity}</span></td><td>${i.unit}</td><td><span class="badge ${i.is_low?'low':'ok'}">${i.is_low?'⚠️ Low':'✅ OK'}</span></td></tr>`).join('');
+  document.getElementById('stockAlerts').innerHTML = data.alerts.length ? data.alerts.map(a=>`<div style="padding:10px;margin-bottom:8px;background:rgba(239,71,111,0.05);border:1px solid rgba(239,71,111,0.2);border-radius:8px;display:flex;justify-content:space-between"><div><div style="font-size:13px;font-weight:600;color:var(--pink)">⚠️ ${a.item}</div><div style="font-size:11px;color:var(--muted)">${a.quantity} ${a.unit} · ${a.days_left} days left</div></div><div style="font-size:12px;color:var(--accent)">Need: ${a.reorder_qty} units</div></div>`).join('') : '<div style="color:var(--green);font-size:13px">✅ All stock levels are fine</div>';
+}
+
+// TIMERS
+function addTimer(minutes, label) {
+  const id = Date.now();
+  const total = minutes * 60;
+  const timer = {id, label, remaining: total, total, active: true};
+  timers.push(timer);
+  renderTimers();
+  if(!timerInterval) timerInterval = setInterval(tickTimers, 1000);
+}
+
+function addCustomTimer() {
+  const min = prompt('Enter minutes:');
+  const label = prompt('Timer label:') || `Custom ${min}min`;
+  if(min && !isNaN(min)) addTimer(parseInt(min), label);
+}
+
+function tickTimers() {
+  let anyActive = false;
+  timers.forEach(t=>{
+    if(t.active && t.remaining > 0){t.remaining--;anyActive=true;}
+    else if(t.active && t.remaining <= 0){t.active=false;showToast('⏰ Timer Done!',`${t.label} is complete!`,'warning');}
+  });
+  timers = timers.filter(t=>t.active||t.remaining>0);
+  renderTimers();
+  if(!anyActive){clearInterval(timerInterval);timerInterval=null;}
+}
+
+function renderTimers() {
+  const grid = document.getElementById('timersGrid');
+  if(!timers.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-icon">⏱️</div><div class="empty-text">No active timers. Add one above.</div></div>';return;}
+  grid.innerHTML = timers.map(t=>{
+    const pct = Math.round((1 - t.remaining/t.total)*100);
+    const min = Math.floor(t.remaining/60), sec = t.remaining%60;
+    const col = t.remaining < 60 ? 'var(--pink)' : t.remaining < 180 ? 'var(--accent2)' : 'var(--green)';
+    return `<div style="background:var(--surface);border:1px solid ${col}33;border-radius:16px;padding:20px;text-align:center">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:600">${t.label}</div>
+      <div style="font-family:'Syne',sans-serif;font-size:36px;font-weight:800;color:${col}">${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}</div>
+      <div style="height:6px;background:var(--surface2);border-radius:100px;margin:12px 0;overflow:hidden"><div style="height:100%;width:${pct}%;background:${col};border-radius:100px;transition:width 1s"></div></div>
+      <div style="font-size:11px;color:var(--muted)">${pct}% complete</div>
+    </div>`;
+  }).join('');
+}
+
+async function loadPerformance() {
+  const data = await fetch('/api/chef/performance').then(r=>r.json());
+  document.getElementById('p-today').textContent = data.today_completed;
+  document.getElementById('p-prep').textContent = data.avg_prep_time + ' min';
+  document.getElementById('p-acc').textContent = data.accuracy_rate + '%';
+  document.getElementById('p-rating').textContent = data.rating + '★';
+  new Chart(document.getElementById('weekChart'),{type:'bar',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{label:'Orders Done',data:data.weekly_output,backgroundColor:'rgba(255,107,53,0.7)',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#8a8680'}},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#8a8680'}}}}});
+  document.getElementById('itemsCooked').innerHTML = data.items_cooked.map(i=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;font-weight:600">${i.name}</span><div style="display:flex;align-items:center;gap:10px"><div class="mini-bar" style="width:80px"><div class="mini-bar-fill" style="width:${Math.min(100,i.count/30*100)}%"></div></div><span style="font-size:13px;font-weight:700;color:var(--accent)">${i.count}</span></div></div>`).join('');
+}
+
+async function loadSchedule() {
+  const schedules = await fetch('/api/chef/schedule').then(r=>r.json());
+  document.getElementById('mySchedule').innerHTML = schedules.length ? schedules.map(s=>`<div style="padding:14px;margin-bottom:10px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:14px;font-weight:700">${s.shift_date}</div><div style="font-size:12px;color:var(--muted);margin-top:3px">🕐 ${s.shift_start} → ${s.shift_end}</div></div><span class="badge ${s.status==='scheduled'?'confirmed':'available'}">${s.status}</span></div>`).join('') : '<div class="empty"><div class="empty-icon">📅</div><div class="empty-text">No upcoming shifts</div></div>';
+}
+
+function loadEarnings() {
+  new Chart(document.getElementById('earningsChart'),{type:'line',data:{labels:Array.from({length:30},(_,i)=>`D${i+1}`),datasets:[{label:'Daily Earnings (₹)',data:Array.from({length:30},()=>Math.floor(Math.random()*400)+200),borderColor:'#06d6a0',backgroundColor:'rgba(6,214,160,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#8a8680',callback:v=>'₹'+v}}}}});
+}
+
+const loaders = {'mod-queue':loadQueue,'mod-orders':loadAllOrders,'mod-recipes':loadRecipes,'mod-inventory':loadInventory,'mod-timers':()=>{},'mod-performance':loadPerformance,'mod-schedule':loadSchedule,'mod-earnings':loadEarnings};
+window.switchModule = function(id,btn){
+  document.querySelectorAll('.module-content').forEach(m=>m.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const mod=document.getElementById(id);if(mod){mod.classList.add('active');if(btn)btn.classList.add('active');}
+  if(loaders[id]) loaders[id]();
+};
+
+loadQueue();
+setInterval(loadQueue, 15000);
+</script>
+{% endblock %}

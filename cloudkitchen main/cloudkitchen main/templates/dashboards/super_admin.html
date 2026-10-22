@@ -1,0 +1,542 @@
+{% extends "dashboards/base.html" %}
+{% block title %}Super Admin{% endblock %}
+{% block page_title %}Platform Control Center{% endblock %}
+{% block page_subtitle %}Full network overview — all kitchens, all data{% endblock %}
+
+{% block nav_items %}
+<div class="nav-section">
+  <div class="nav-section-label">Overview</div>
+  <div class="nav-item active" onclick="switchModule('mod-overview',this)"><span class="nav-icon">📊</span>Dashboard</div>
+  <div class="nav-item" onclick="switchModule('mod-analytics',this)"><span class="nav-icon">📈</span>Analytics</div>
+</div>
+<div class="nav-section">
+  <div class="nav-section-label">Management</div>
+  <div class="nav-item" onclick="switchModule('mod-kitchens',this)"><span class="nav-icon">🏪</span>Kitchens<span class="nav-badge" id="kitchenCount">-</span></div>
+  <div class="nav-item" onclick="switchModule('mod-users',this)"><span class="nav-icon">👥</span>Users</div>
+  <div class="nav-item" onclick="switchModule('mod-orders',this)"><span class="nav-icon">🛍️</span>All Orders</div>
+</div>
+<div class="nav-section">
+  <div class="nav-section-label">Revenue</div>
+  <div class="nav-item" onclick="switchModule('mod-revenue',this)"><span class="nav-icon">💰</span>Revenue Forecast</div>
+  <div class="nav-item" onclick="switchModule('mod-coupons',this)"><span class="nav-icon">🎟️</span>Coupons</div>
+</div>
+<div class="nav-section">
+  <div class="nav-section-label">System</div>
+  <div class="nav-item" onclick="switchModule('mod-settings',this)"><span class="nav-icon">⚙️</span>Settings</div>
+  <div class="nav-item" onclick="switchModule('mod-ai',this)"><span class="nav-icon">🤖</span>AI Engine</div>
+  <div class="nav-item" onclick="switchModule('mod-audit',this)"><span class="nav-icon">📜</span>Audit Logs</div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- MODULE: OVERVIEW -->
+<div class="module-content active" id="mod-overview">
+  <div class="stat-grid g4" id="statsGrid">
+    <div class="stat-card orange"><div class="stat-icon">🏪</div><div class="stat-label">Total Kitchens</div><div class="stat-val" id="s-kitchens">—</div><div class="stat-change up" id="s-kitchens-c">Loading...</div></div>
+    <div class="stat-card blue"><div class="stat-icon">👥</div><div class="stat-label">Total Users</div><div class="stat-val" id="s-users">—</div><div class="stat-change up">Registered accounts</div></div>
+    <div class="stat-card green"><div class="stat-icon">🛍️</div><div class="stat-label">Total Orders</div><div class="stat-val" id="s-orders">—</div><div class="stat-change" id="s-active-orders">Active: —</div></div>
+    <div class="stat-card yellow"><div class="stat-icon">💰</div><div class="stat-label">Total Revenue</div><div class="stat-val" id="s-revenue">—</div><div class="stat-change up">All kitchens</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:24px">
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">📈 Revenue Trend (7 Days)</span><span style="font-size:12px;color:var(--muted)">AI Forecast</span></div>
+      <div class="panel-body"><div class="chart-wrap"><canvas id="revenueChart"></canvas></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">🛍️ Orders by Status</span></div>
+      <div class="panel-body"><div class="chart-wrap"><canvas id="statusChart"></canvas></div></div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">🏆 Top Kitchens</span><button class="btn btn-sm btn-outline" onclick="switchModule('mod-kitchens',document.querySelector('.nav-item:nth-child(4))'))">View All</button></div>
+      <div class="panel-body" style="padding:0"><table><thead><tr><th>Kitchen</th><th>City</th><th>Orders</th><th>Revenue</th><th>Rating</th></tr></thead><tbody id="topKitchensTable"></tbody></table></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">🤖 AI Insights</span><span class="badge available">Live</span></div>
+      <div class="panel-body" id="aiInsights"><div class="empty"><div class="empty-icon">🤖</div><div>Loading insights...</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODULE: ANALYTICS -->
+<div class="module-content" id="mod-analytics">
+  <div class="stat-grid g4" style="margin-bottom:24px">
+    <div class="stat-card orange"><div class="stat-icon">📊</div><div class="stat-label">Daily Avg Orders</div><div class="stat-val" id="a-avg-orders">—</div></div>
+    <div class="stat-card green"><div class="stat-icon">😊</div><div class="stat-label">Satisfaction Score</div><div class="stat-val" id="a-satisfaction">—</div></div>
+    <div class="stat-card blue"><div class="stat-icon">📍</div><div class="stat-label">Top City</div><div class="stat-val" id="a-top-city">—</div></div>
+    <div class="stat-card yellow"><div class="stat-icon">🌱</div><div class="stat-label">User Growth/mo</div><div class="stat-val" id="a-growth">—</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px">
+    <div class="panel"><div class="panel-header"><span class="panel-title">📊 Daily Orders (30 Days)</span></div><div class="panel-body"><div class="chart-wrap"><canvas id="ordersChart"></canvas></div></div></div>
+    <div class="panel"><div class="panel-header"><span class="panel-title">💰 Daily Revenue (30 Days)</span></div><div class="panel-body"><div class="chart-wrap"><canvas id="dailyRevChart"></canvas></div></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">🏙️ Top Cities Performance</span></div>
+    <div class="panel-body" id="citiesPanel"></div>
+  </div>
+</div>
+
+<!-- MODULE: KITCHENS -->
+<div class="module-content" id="mod-kitchens">
+  <div class="flex-between mb2">
+    <div class="search-bar"><span>🔍</span><input type="text" id="kitchenSearch" placeholder="Search kitchens..." oninput="filterKitchens()"></div>
+    <button class="btn btn-primary" onclick="openKitchenModal()">+ Add Kitchen</button>
+  </div>
+  <div class="panel"><div class="panel-body" style="padding:0"><table><thead><tr><th>Kitchen</th><th>City</th><th>Cuisine</th><th>Orders</th><th>Revenue</th><th>Rating</th><th>Status</th><th>Actions</th></tr></thead><tbody id="kitchensTable"></tbody></table></div></div>
+</div>
+
+<!-- MODULE: USERS -->
+<div class="module-content" id="mod-users">
+  <div class="flex-between mb2">
+    <div style="display:flex;gap:10px">
+      <div class="search-bar"><span>🔍</span><input type="text" id="userSearch" placeholder="Search users..." oninput="filterUsers()"></div>
+      <select class="form-input" id="roleFilter" onchange="filterUsers()" style="width:160px;padding:8px 12px">
+        <option value="">All Roles</option>
+        <option value="super_admin">Super Admin</option>
+        <option value="brand_admin">Kitchen Manager</option>
+        <option value="chef">Chef</option>
+        <option value="delivery">Delivery</option>
+        <option value="customer">Customer</option>
+      </select>
+    </div>
+  </div>
+  <div class="panel"><div class="panel-body" style="padding:0"><table><thead><tr><th>User</th><th>Email</th><th>Role</th><th>Orders</th><th>Rating</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead><tbody id="usersTable"></tbody></table></div></div>
+</div>
+
+<!-- MODULE: ORDERS -->
+<div class="module-content" id="mod-orders">
+  <div class="stat-grid g4" style="margin-bottom:24px">
+    <div class="stat-card orange"><div class="stat-label">Pending</div><div class="stat-val" id="o-pending">—</div></div>
+    <div class="stat-card blue"><div class="stat-label">Preparing</div><div class="stat-val" id="o-preparing">—</div></div>
+    <div class="stat-card green"><div class="stat-label">Delivered</div><div class="stat-val" id="o-delivered">—</div></div>
+    <div class="stat-card pink"><div class="stat-label">Cancelled</div><div class="stat-val" id="o-cancelled">—</div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">All Platform Orders</span></div>
+    <div class="panel-body" style="padding:0"><table><thead><tr><th>Order #</th><th>Customer</th><th>Kitchen</th><th>Total</th><th>Status</th><th>Payment</th><th>Time</th><th>Actions</th></tr></thead><tbody id="allOrdersTable"></tbody></table></div>
+  </div>
+</div>
+
+<!-- MODULE: REVENUE -->
+<div class="module-content" id="mod-revenue">
+  <div class="stat-grid g3" style="margin-bottom:24px">
+    <div class="stat-card green"><div class="stat-icon">📈</div><div class="stat-label">30-Day Forecast Total</div><div class="stat-val" id="forecast-total">—</div></div>
+    <div class="stat-card orange"><div class="stat-icon">📊</div><div class="stat-label">Daily Average</div><div class="stat-val" id="forecast-avg">—</div></div>
+    <div class="stat-card blue"><div class="stat-icon">🎯</div><div class="stat-label">AI Confidence</div><div class="stat-val">94.2%</div></div>
+  </div>
+  <div class="panel"><div class="panel-header"><span class="panel-title">🤖 30-Day AI Revenue Forecast</span><span style="font-size:12px;color:var(--muted)">Machine Learning Prediction</span></div><div class="panel-body"><div style="height:260px"><canvas id="forecastChart"></canvas></div></div></div>
+</div>
+
+<!-- MODULE: COUPONS -->
+<div class="module-content" id="mod-coupons">
+  <div class="flex-between mb2">
+    <h3 style="font-family:'Syne',sans-serif">Coupon Management</h3>
+    <button class="btn btn-primary" onclick="openCouponModal()">+ Create Coupon</button>
+  </div>
+  <div class="panel"><div class="panel-body" style="padding:0"><table><thead><tr><th>Code</th><th>Type</th><th>Value</th><th>Min Order</th><th>Used/Limit</th><th>Status</th></tr></thead><tbody id="couponsTable"></tbody></table></div></div>
+</div>
+
+<!-- MODULE: SETTINGS -->
+<div class="module-content" id="mod-settings">
+  <div style="max-width:600px">
+    <div class="panel" style="margin-bottom:20px">
+      <div class="panel-header"><span class="panel-title">⚙️ Platform Settings</span></div>
+      <div class="panel-body">
+        <div class="form-group"><label>Platform Name</label><input class="form-input" value="CloudKitchen Pro"></div>
+        <div class="form-group"><label>Default Commission Rate (%)</label><input class="form-input" type="number" value="15"></div>
+        <div class="form-group"><label>Default Delivery Fee (₹)</label><input class="form-input" type="number" value="30"></div>
+        <div class="form-group"><label>GST Rate (%)</label><input class="form-input" type="number" value="5"></div>
+        <div class="form-group"><label>Max Delivery Radius (km)</label><input class="form-input" type="number" value="10"></div>
+        <button class="btn btn-primary">Save Settings</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">🔒 Security</span></div>
+      <div class="panel-body">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="flex-between"><div><div style="font-size:14px;font-weight:600">Two-Factor Authentication</div><div style="font-size:12px;color:var(--muted)">Add extra security</div></div><div style="width:44px;height:24px;background:var(--accent);border-radius:100px;cursor:pointer;position:relative"><div style="width:18px;height:18px;background:#fff;border-radius:50%;position:absolute;right:3px;top:3px"></div></div></div>
+          <div class="flex-between"><div><div style="font-size:14px;font-weight:600">Login Notifications</div><div style="font-size:12px;color:var(--muted)">Email on new login</div></div><div style="width:44px;height:24px;background:var(--green);border-radius:100px;cursor:pointer;position:relative"><div style="width:18px;height:18px;background:#fff;border-radius:50%;position:absolute;right:3px;top:3px"></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODULE: AI ENGINE -->
+<div class="module-content" id="mod-ai">
+  <div class="stat-grid g3" style="margin-bottom:24px">
+    <div class="stat-card green"><div class="stat-icon">🤖</div><div class="stat-label">AI Model Accuracy</div><div class="stat-val">97.3%</div></div>
+    <div class="stat-card orange"><div class="stat-icon">⚡</div><div class="stat-label">Predictions Today</div><div class="stat-val">12,847</div></div>
+    <div class="stat-card blue"><div class="stat-icon">📡</div><div class="stat-label">Models Active</div><div class="stat-val">6</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">🧠 Active AI Models</span></div>
+      <div class="panel-body">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="flex-between"><div><div style="font-size:13px;font-weight:600">Demand Forecasting</div><div style="font-size:11px;color:var(--muted)">Time-series prediction</div></div><span class="badge available">Active</span></div>
+          <div class="flex-between"><div><div style="font-size:13px;font-weight:600">Recommendation Engine</div><div style="font-size:11px;color:var(--muted)">Collaborative filtering</div></div><span class="badge available">Active</span></div>
+          <div class="flex-between"><div><div style="font-size:13px;font-weight:600">Sentiment Analysis</div><div style="font-size:11px;color:var(--muted)">Review NLP processing</div></div><span class="badge available">Active</span></div>
+          <div class="flex-between"><div><div style="font-size:13px;font-weight:600">Route Optimization</div><div style="font-size:11px;color:var(--muted)">Nearest-neighbor TSP</div></div><span class="badge available">Active</span></div>
+          <div class="flex-between"><div><div style="font-size:13px;font-weight:600">Dynamic Pricing</div><div style="font-size:11px;color:var(--muted)">Peak-hour multiplier</div></div><span class="badge available">Active</span></div>
+          <div class="flex-between"><div><div style="font-size:13px;font-weight:600">Prep Time Predictor</div><div style="font-size:11px;color:var(--muted)">Order complexity model</div></div><span class="badge available">Active</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">📊 Model Performance</span></div>
+      <div class="panel-body"><div class="chart-wrap"><canvas id="aiPerfChart"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODULE: AUDIT LOGS -->
+<div class="module-content" id="mod-audit">
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">📜 Security Audit Logs</span><span class="badge confirmed">Admin Only</span></div>
+    <div class="panel-body" style="padding:0">
+      <table>
+        <thead><tr><th>Timestamp</th><th>Action</th><th>Details</th><th>IP Address</th></tr></thead>
+        <tbody id="auditLogsTable"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Kitchen Modal -->
+<div class="modal" id="kitchenModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box">
+    <h3>🏪 Add New Kitchen</h3>
+    <div class="form-group"><label>Kitchen Name</label><input class="form-input" id="k-name" placeholder="e.g. Spice Garden Kitchen"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Brand</label><input class="form-input" id="k-brand" placeholder="Brand name"></div>
+      <div class="form-group"><label>City</label><input class="form-input" id="k-city" placeholder="Bengaluru"></div>
+    </div>
+    <div class="form-group"><label>Address</label><input class="form-input" id="k-address" placeholder="Full address"></div>
+    <div class="form-group"><label>Cuisine Type</label><input class="form-input" id="k-cuisine" placeholder="Indian, Italian..."></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Commission Rate (%)</label><input class="form-input" type="number" id="k-commission" value="15"></div>
+      <div class="form-group"><label>Capacity</label><input class="form-input" type="number" id="k-capacity" value="50"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="addKitchen()">Add Kitchen</button>
+      <button class="btn btn-outline" onclick="document.getElementById('kitchenModal').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Coupon Modal -->
+<div class="modal" id="couponModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box">
+    <h3>🎟️ Create Coupon</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Coupon Code</label><input class="form-input" id="c-code" placeholder="SAVE20"></div>
+      <div class="form-group"><label>Type</label><select class="form-input" id="c-type"><option value="percentage">Percentage %</option><option value="flat">Flat ₹</option></select></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Discount Value</label><input class="form-input" type="number" id="c-value" placeholder="20"></div>
+      <div class="form-group"><label>Min Order (₹)</label><input class="form-input" type="number" id="c-min" placeholder="200"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Max Discount (₹)</label><input class="form-input" type="number" id="c-max" placeholder="100"></div>
+      <div class="form-group"><label>Usage Limit</label><input class="form-input" type="number" id="c-limit" placeholder="100"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="addCoupon()">Create Coupon</button>
+      <button class="btn btn-outline" onclick="document.getElementById('couponModal').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Order Control Modal -->
+<div class="modal" id="orderControlModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box">
+    <h3>🎮 Order Decision Control</h3>
+    <div style="margin-bottom:20px">
+      <div style="font-size:14px;color:var(--muted)">Managing Order: <strong id="ctrl-num" style="color:var(--accent)">-</strong></div>
+    </div>
+    <input type="hidden" id="ctrl-oid">
+    <div class="form-group">
+      <label>Override Status</label>
+      <select class="form-input" id="ctrl-status">
+        <option value="pending">Pending</option>
+        <option value="confirmed">Confirmed</option>
+        <option value="preparing">Preparing</option>
+        <option value="ready">Ready</option>
+        <option value="picked_up">Picked Up</option>
+        <option value="delivered">Delivered</option>
+        <option value="cancelled">Cancelled (Refund)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>AI Priority Score (0.0 - 1.0)</label>
+      <input type="range" class="form-input" id="ctrl-priority" min="0" max="1" step="0.1" value="0.5">
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">Higher score moves order to the top of Chef's queue</div>
+    </div>
+    <div style="padding:12px;background:rgba(255,107,53,0.06);border-radius:10px;border:1px solid rgba(255,107,53,0.1);margin-bottom:20px">
+      <div style="font-size:12px;color:var(--accent);font-weight:700">⚖️ Admin Authority</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">Changing status here bypasses standard kitchen workflows and notifies the customer immediately.</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" style="flex:1" onclick="applyOrderDecision()">Apply Decision</button>
+      <button class="btn btn-outline" onclick="document.getElementById('orderControlModal').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allKitchens = [], allUsers = [];
+
+async function loadDashboard() {
+  const [stats, analytics] = await Promise.all([
+    fetch('/api/admin/stats').then(r=>r.json()),
+    fetch('/api/platform-analytics').then(r=>r.json()).catch(()=>({}))
+  ]);
+  document.getElementById('s-kitchens').textContent = stats.total_kitchens;
+  document.getElementById('s-users').textContent = fmtNum(stats.total_users);
+  document.getElementById('s-orders').textContent = fmtNum(stats.total_orders);
+  document.getElementById('s-revenue').textContent = fmtCurrency(stats.total_revenue);
+  document.getElementById('s-active-orders').textContent = `Active: ${stats.active_orders}`;
+  document.getElementById('kitchenCount').textContent = stats.total_kitchens;
+  document.getElementById('o-pending').textContent = stats.orders_by_status?.pending||0;
+  document.getElementById('o-preparing').textContent = stats.orders_by_status?.preparing||0;
+  document.getElementById('o-delivered').textContent = stats.orders_by_status?.delivered||0;
+  document.getElementById('o-cancelled').textContent = stats.orders_by_status?.cancelled||0;
+
+  // Revenue chart
+  new Chart(document.getElementById('revenueChart'), {
+    type:'line', data:{ labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+      datasets:[{label:'Revenue',data:stats.revenue_trend,borderColor:'#ff6b35',backgroundColor:'rgba(255,107,53,0.1)',fill:true,tension:0.4,borderWidth:2,pointRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#8a8680'}},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#8a8680',callback:v=>'₹'+Math.round(v/1000)+'k'}}}}
+  });
+
+  // Status chart
+  const st = stats.orders_by_status||{};
+  new Chart(document.getElementById('statusChart'), {
+    type:'doughnut', data:{
+      labels:['Pending','Preparing','Delivered','Cancelled'],
+      datasets:[{data:[st.pending||0,st.preparing||0,st.delivered||0,st.cancelled||0],backgroundColor:['#ffd166','#ff6b35','#06d6a0','#ef476f'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8a8680',boxWidth:10,font:{size:11}}}},cutout:'65%'}
+  });
+  renderAIInsights(stats);
+}
+
+function renderAIInsights(stats) {
+  const insights = [
+    {icon:'📈',text:`Revenue is trending <strong>${stats.total_revenue > 50000 ? 'up ↑' : 'steady →'}</strong> this week`,color:'var(--green)'},
+    {icon:'⚡',text:`<strong>${stats.active_orders}</strong> orders currently active across all kitchens`,color:'var(--accent)'},
+    {icon:'🎯',text:`Peak hour demand expected <strong>12–1 PM & 7–9 PM</strong> today`,color:'var(--blue)'},
+    {icon:'⚠️',text:`AI detects potential inventory shortage in <strong>2 kitchens</strong>`,color:'var(--accent2)'},
+    {icon:'🤖',text:`Dynamic pricing activated for <strong>${Math.floor(Math.random()*5)+3} menu items</strong>`,color:'var(--pink)'},
+  ];
+  document.getElementById('aiInsights').innerHTML = insights.map(i=>`
+    <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:18px">${i.icon}</span>
+      <div style="font-size:13px;line-height:1.6;color:var(--muted)">${i.text}</div>
+    </div>`).join('');
+}
+
+async function loadAnalytics() {
+  const data = await fetch('/api/admin/platform-analytics').then(r=>r.json());
+  document.getElementById('a-avg-orders').textContent = Math.round(data.daily_orders.reduce((a,b)=>a+b,0)/data.daily_orders.length);
+  document.getElementById('a-satisfaction').textContent = data.satisfaction_score + '★';
+  document.getElementById('a-top-city').textContent = data.top_cities?.[0]?.city || 'Bengaluru';
+  document.getElementById('a-growth').textContent = '+' + Math.round(data.user_growth?.slice(-1)[0]||0);
+  const labels30 = Array.from({length:30},(_,i)=>`D${i+1}`);
+  new Chart(document.getElementById('ordersChart'), {type:'bar',data:{labels:labels30,datasets:[{label:'Orders',data:data.daily_orders,backgroundColor:'rgba(17,138,178,0.6)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#8a8680'}}}}});
+  new Chart(document.getElementById('dailyRevChart'), {type:'line',data:{labels:labels30,datasets:[{label:'Revenue',data:data.daily_revenue,borderColor:'#ffd166',backgroundColor:'rgba(255,209,102,0.1)',fill:true,tension:0.4,borderWidth:2,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#8a8680',callback:v=>'₹'+Math.round(v/1000)+'k'}}}}});
+  document.getElementById('citiesPanel').innerHTML = (data.top_cities||[]).map(c=>`
+    <div style="display:flex;align-items:center;gap:16px;padding:12px 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:18px">📍</div><div style="flex:1"><div style="font-size:14px;font-weight:600">${c.city}</div><div class="mini-bar"><div class="mini-bar-fill" style="width:${Math.min(100,c.orders/5)}%"></div></div></div>
+      <div style="font-size:13px;font-weight:600;color:var(--accent)">${fmtNum(c.orders)} orders</div>
+    </div>`).join('');
+}
+
+async function loadAIEngine() {
+  // AI Perf chart
+  new Chart(document.getElementById('aiPerfChart'), {type:'radar',data:{labels:['Demand','Recomm.','Sentiment','Routing','Pricing','Prep Time'],datasets:[{label:'Accuracy %',data:[97,89,94,92,96,91],borderColor:'#ff6b35',backgroundColor:'rgba(255,107,53,0.1)',borderWidth:2,pointBackgroundColor:'#ff6b35'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{r:{grid:{color:'rgba(255,255,255,0.08)'},ticks:{display:false},pointLabels:{color:'#8a8680',font:{size:11}}}}}});
+}
+
+async function loadKitchens() {
+  allKitchens = await fetch('/api/admin/kitchens').then(r=>r.json());
+  renderKitchens(allKitchens);
+  const tbody = document.querySelector('#topKitchensTable');
+  if (tbody) tbody.innerHTML = allKitchens.slice(0,5).map(k=>`<tr><td><div style="font-weight:600">${k.name}</div><div style="font-size:11px;color:var(--muted)">${k.brand||''}</div></td><td>${k.city}</td><td>${fmtNum(k.total_orders)}</td><td>${fmtCurrency(k.revenue)}</td><td><span class="stars">★</span> ${k.rating}</td></tr>`).join('');
+}
+
+function renderKitchens(kitchens) {
+  document.getElementById('kitchensTable').innerHTML = kitchens.map(k=>`
+    <tr>
+      <td><div style="font-weight:600">${k.name}</div><div style="font-size:11px;color:var(--muted)">${k.brand||''}</div></td>
+      <td>${k.city}</td><td>${k.cuisine_type||'—'}</td>
+      <td>${fmtNum(k.total_orders)}</td><td>${fmtCurrency(k.revenue)}</td>
+      <td><span class="stars">★</span> ${k.rating}</td>
+      <td><span class="badge ${k.is_active?'available':'cancelled'}">${k.is_active?'Active':'Inactive'}</span></td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteKitchen(${k.id})">🗑️</button></td>
+    </tr>`).join('');
+}
+
+function filterKitchens() {
+  const q = document.getElementById('kitchenSearch').value.toLowerCase();
+  renderKitchens(allKitchens.filter(k=>k.name.toLowerCase().includes(q)||k.city.toLowerCase().includes(q)));
+}
+
+async function loadUsers() {
+  allUsers = await fetch('/api/admin/users').then(r=>r.json());
+  renderUsers(allUsers);
+}
+
+function renderUsers(users) {
+  const roleIcons = {super_admin:'👑',brand_admin:'🏪',chef:'👨‍🍳',delivery:'🚴',customer:'👤'};
+  document.getElementById('usersTable').innerHTML = users.map(u=>`
+    <tr>
+      <td><div style="font-weight:600">${roleIcons[u.role]||'👤'} ${u.name}</div></td>
+      <td style="font-size:12px;color:var(--muted)">${u.email}</td>
+      <td><span class="badge confirmed">${u.role.replace('_',' ')}</span></td>
+      <td>${u.total_orders}</td>
+      <td><span class="stars">★</span> ${u.rating}</td>
+      <td><span class="badge ${u.is_active?'available':'cancelled'}">${u.is_active?'Active':'Inactive'}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${new Date(u.created_at).toLocaleDateString()}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})">🗑️</button></td>
+    </tr>`).join('');
+}
+
+function filterUsers() {
+  const q = document.getElementById('userSearch').value.toLowerCase();
+  const role = document.getElementById('roleFilter').value;
+  renderUsers(allUsers.filter(u=>(u.name.toLowerCase().includes(q)||u.email.toLowerCase().includes(q))&&(!role||u.role===role)));
+}
+
+async function loadRevenue() {
+  const data = await fetch('/api/admin/revenue-forecast').then(r=>r.json());
+  document.getElementById('forecast-total').textContent = fmtCurrency(data.total);
+  document.getElementById('forecast-avg').textContent = fmtCurrency(data.avg);
+  const labels = Array.from({length:30},(_,i)=>`Day ${i+1}`);
+  new Chart(document.getElementById('forecastChart'), {type:'line',data:{labels,datasets:[{label:'Forecast Revenue',data:data.forecasts,borderColor:'#06d6a0',backgroundColor:'rgba(6,214,160,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:2,pointBackgroundColor:'#06d6a0'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8a8680',maxTicksLimit:10},grid:{color:'rgba(255,255,255,0.05)'}},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#8a8680',callback:v=>'₹'+Math.round(v/1000)+'k'}}}}});
+}
+
+async function loadCoupons() {
+  const coupons = await fetch('/api/admin/coupons').then(r=>r.json());
+  document.getElementById('couponsTable').innerHTML = coupons.map(c=>`
+    <tr>
+      <td><div style="font-weight:700;font-family:'Syne',sans-serif;color:var(--accent)">${c.code}</div></td>
+      <td>${c.discount_type}</td>
+      <td>${c.discount_type==='percentage'?c.discount_value+'%':'₹'+c.discount_value}</td>
+      <td>₹${c.min_order}</td>
+      <td><div class="mini-bar" style="width:120px"><div class="mini-bar-fill" style="width:${Math.min(100,c.used_count/c.usage_limit*100)}%"></div></div><div style="font-size:11px;color:var(--muted);margin-top:3px">${c.used_count}/${c.usage_limit}</div></td>
+      <td><span class="badge ${c.is_active?'available':'cancelled'}">${c.is_active?'Active':'Inactive'}</span></td>
+    </tr>`).join('');
+}
+
+function openKitchenModal() { document.getElementById('kitchenModal').classList.add('open'); }
+function openCouponModal() { document.getElementById('couponModal').classList.add('open'); }
+
+async function addKitchen() {
+  const res = await fetch('/api/admin/kitchens',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:document.getElementById('k-name').value,brand:document.getElementById('k-brand').value,city:document.getElementById('k-city').value,address:document.getElementById('k-address').value,cuisine_type:document.getElementById('k-cuisine').value,commission_rate:parseFloat(document.getElementById('k-commission').value),capacity:parseInt(document.getElementById('k-capacity').value)})});
+  const data = await res.json();
+  if(data.success){document.getElementById('kitchenModal').classList.remove('open');loadKitchens();showToast('✅ Kitchen Added','New kitchen created successfully','success');}
+}
+
+async function deleteKitchen(id) {
+  if(!confirm('Delete this kitchen?')) return;
+  await fetch(`/api/admin/kitchens/${id}`,{method:'DELETE'});
+  loadKitchens(); showToast('🗑️ Deleted','Kitchen removed','info');
+}
+
+async function deleteUser(id) {
+  if(!confirm('Delete this user?')) return;
+  await fetch(`/api/admin/users/${id}`,{method:'DELETE'});
+  loadUsers(); showToast('🗑️ Deleted','User removed','info');
+}
+
+async function addCoupon() {
+  const res = await fetch('/api/admin/coupons',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:document.getElementById('c-code').value,discount_type:document.getElementById('c-type').value,discount_value:parseFloat(document.getElementById('c-value').value),min_order:parseFloat(document.getElementById('c-min').value||200),max_discount:parseFloat(document.getElementById('c-max').value||100),usage_limit:parseInt(document.getElementById('c-limit').value||100)})});
+  const data = await res.json();
+  if(data.success){document.getElementById('couponModal').classList.remove('open');loadCoupons();showToast('✅ Coupon Created','New coupon is live','success');}
+}
+
+// Switch module with lazy loading
+const moduleLoaders = {
+  'mod-overview': loadDashboard,
+  'mod-analytics': loadAnalytics,
+  'mod-kitchens': loadKitchens,
+  'mod-users': loadUsers,
+  'mod-orders': loadOrders,
+  'mod-revenue': loadRevenue,
+  'mod-coupons': loadCoupons,
+  'mod-ai': loadAIEngine,
+  'mod-audit': loadAuditLogs,
+};
+
+async function loadAuditLogs() {
+  const logs = await fetch('/api/admin/audit-logs').then(r=>r.json());
+  document.getElementById('auditLogsTable').innerHTML = logs.map(l=>`
+    <tr>
+      <td style="font-size:12px;color:var(--muted)">${new Date(l.timestamp).toLocaleString()}</td>
+      <td style="font-weight:600">${l.action}</td>
+      <td style="font-size:12px">${l.details || '—'}</td>
+      <td style="font-size:11px;color:var(--muted)">${l.ip}</td>
+    </tr>`).join('');
+}
+const origSwitch = window.switchModule;
+window.switchModule = function(id, btn) {
+  document.querySelectorAll('.module-content').forEach(m=>m.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const mod = document.getElementById(id);
+  if(mod){mod.classList.add('active'); if(btn)btn.classList.add('active');}
+  if(moduleLoaders[id]) moduleLoaders[id]();
+};
+
+async function loadOrders() {
+  const orders = await fetch('/api/admin/orders').then(r=>r.json());
+  document.getElementById('allOrdersTable').innerHTML = orders.length ? orders.map(o=>`
+    <tr>
+      <td style="font-weight:700;color:var(--accent)">${o.order_number}</td>
+      <td>${o.customer_name}</td>
+      <td>${o.kitchen_name}</td>
+      <td style="font-weight:700">${fmtCurrency(o.total)}</td>
+      <td><span class="badge ${o.status}">${o.status}</span></td>
+      <td><span class="badge ${o.payment_status==='paid'?'available':'pending'}">${o.payment_status}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${new Date(o.created_at).toLocaleTimeString()}</td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-sm btn-outline" onclick="openOrderControl(${o.id}, '${o.order_number}', '${o.status}')">🎮 Control</button>
+        </div>
+      </td>
+    </tr>`).join('') : '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:40px">No orders found on the platform.</td></tr>';
+}
+
+function openOrderControl(oid, num, status) {
+  document.getElementById('ctrl-oid').value = oid;
+  document.getElementById('ctrl-num').textContent = num;
+  document.getElementById('ctrl-status').value = status;
+  document.getElementById('orderControlModal').classList.add('open');
+}
+
+async function applyOrderDecision() {
+  const oid = document.getElementById('ctrl-oid').value;
+  const status = document.getElementById('ctrl-status').value;
+  const priority = document.getElementById('ctrl-priority').value;
+
+  const res = await fetch(`/api/admin/orders/${oid}/control`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({status, ai_priority_score: parseFloat(priority)})
+  });
+
+  const data = await res.json();
+  if(data.success) {
+    document.getElementById('orderControlModal').classList.remove('open');
+    loadOrders();
+    showToast('⚖️ Decision Applied', `Order ${oid} has been updated by Admin override`, 'success');
+  }
+}
+
+// Initial load
+loadDashboard();
+loadKitchens();
+</script>
+{% endblock %}

@@ -1,0 +1,461 @@
+{% extends "dashboards/base.html" %}
+{% block title %}Kitchen Manager{% endblock %}
+{% block page_title %}Kitchen Control Center{% endblock %}
+{% block page_subtitle %}Manage your brand, menu, staff & operations{% endblock %}
+
+{% block nav_items %}
+<div class="nav-section">
+  <div class="nav-section-label">Overview</div>
+  <div class="nav-item active" onclick="switchModule('mod-overview',this)"><span class="nav-icon">📊</span>Dashboard</div>
+  <div class="nav-item" onclick="switchModule('mod-analytics',this)"><span class="nav-icon">📈</span>Analytics</div>
+</div>
+<div class="nav-section">
+  <div class="nav-section-label">Operations</div>
+  <div class="nav-item" onclick="switchModule('mod-orders',this)"><span class="nav-icon">🛍️</span>Live Orders<span class="nav-badge" id="pendingBadge">0</span></div>
+  <div class="nav-item" onclick="switchModule('mod-menu',this)"><span class="nav-icon">🍽️</span>Menu Manager</div>
+  <div class="nav-item" onclick="switchModule('mod-inventory',this)"><span class="nav-icon">📦</span>Inventory<span class="nav-badge" id="alertBadge" style="background:var(--pink)">!</span></div>
+</div>
+<div class="nav-section">
+  <div class="nav-section-label">Team</div>
+  <div class="nav-item" onclick="switchModule('mod-staff',this)"><span class="nav-icon">👥</span>Staff</div>
+  <div class="nav-item" onclick="switchModule('mod-schedule',this)"><span class="nav-icon">📅</span>Schedule</div>
+</div>
+<div class="nav-section">
+  <div class="nav-section-label">Growth</div>
+  <div class="nav-item" onclick="switchModule('mod-reviews',this)"><span class="nav-icon">⭐</span>Reviews</div>
+  <div class="nav-item" onclick="switchModule('mod-reports',this)"><span class="nav-icon">📋</span>Reports</div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- OVERVIEW -->
+<div class="module-content active" id="mod-overview">
+  <div class="stat-grid g5" style="margin-bottom:24px">
+    <div class="stat-card orange"><div class="stat-icon">🛍️</div><div class="stat-label">Today's Orders</div><div class="stat-val" id="s-today">—</div></div>
+    <div class="stat-card green"><div class="stat-icon">💰</div><div class="stat-label">Today Revenue</div><div class="stat-val" id="s-revenue">—</div></div>
+    <div class="stat-card blue"><div class="stat-icon">⏳</div><div class="stat-label">Pending</div><div class="stat-val" id="s-pending">—</div></div>
+    <div class="stat-card yellow"><div class="stat-icon">🍳</div><div class="stat-label">Preparing</div><div class="stat-val" id="s-preparing">—</div></div>
+    <div class="stat-card pink"><div class="stat-icon">⚠️</div><div class="stat-label">Stock Alerts</div><div class="stat-val" id="s-alerts">—</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:24px">
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">📈 7-Day Revenue</span></div>
+      <div class="panel-body"><div class="chart-wrap"><canvas id="revChart"></canvas></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">🤖 AI Demand Forecast</span></div>
+      <div class="panel-body"><div class="chart-wrap"><canvas id="demandChart"></canvas></div></div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">🔴 Live Orders</span><span class="badge available" style="animation:pulse 2s infinite">Live</span></div>
+      <div class="panel-body" style="padding:0"><div id="liveOrdersList" style="max-height:280px;overflow-y:auto"></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">⚠️ Inventory Alerts</span></div>
+      <div class="panel-body" id="alertsPanel" style="max-height:280px;overflow-y:auto"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ANALYTICS -->
+<div class="module-content" id="mod-analytics">
+  <div class="stat-grid g3" style="margin-bottom:24px">
+    <div class="stat-card orange"><div class="stat-label">Avg Prep Time</div><div class="stat-val" id="a-prep">—</div><div class="stat-change">minutes</div></div>
+    <div class="stat-card green"><div class="stat-label">Customer Satisfaction</div><div class="stat-val" id="a-csat">—</div><div class="stat-change up">out of 5</div></div>
+    <div class="stat-card blue"><div class="stat-label">Waste Index</div><div class="stat-val" id="a-waste">—</div><div class="stat-change">% food waste</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px">
+    <div class="panel"><div class="panel-header"><span class="panel-title">🕐 Hourly Orders</span></div><div class="panel-body"><div class="chart-wrap"><canvas id="hourlyChart"></canvas></div></div></div>
+    <div class="panel"><div class="panel-header"><span class="panel-title">🍽️ Category Sales</span></div><div class="panel-body"><div class="chart-wrap"><canvas id="catChart"></canvas></div></div></div>
+  </div>
+  <div class="panel"><div class="panel-header"><span class="panel-title">📅 Weekly Revenue</span></div><div class="panel-body"><div class="chart-wrap" style="height:160px"><canvas id="weekRevChart"></canvas></div></div></div>
+</div>
+
+<!-- LIVE ORDERS -->
+<div class="module-content" id="mod-orders">
+  <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+    <button class="btn btn-outline" onclick="filterOrders('')" id="fAll">All Orders</button>
+    <button class="btn btn-outline" onclick="filterOrders('pending')" id="fPending">⏳ Pending</button>
+    <button class="btn btn-outline" onclick="filterOrders('confirmed')" id="fConfirmed">✅ Confirmed</button>
+    <button class="btn btn-outline" onclick="filterOrders('preparing')" id="fPreparing">🍳 Preparing</button>
+    <button class="btn btn-outline" onclick="filterOrders('ready')" id="fReady">📦 Ready</button>
+    <button class="btn btn-outline" onclick="filterOrders('delivered')" id="fDelivered">🎉 Delivered</button>
+  </div>
+  <div class="panel"><div class="panel-body" style="padding:0"><table><thead><tr><th>Order #</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Est. Time</th><th>Actions</th></tr></thead><tbody id="ordersTable"></tbody></table></div></div>
+</div>
+
+<!-- MENU MANAGER -->
+<div class="module-content" id="mod-menu">
+  <div class="flex-between mb2">
+    <div style="display:flex;gap:10px">
+      <div class="search-bar"><span>🔍</span><input type="text" id="menuSearch" placeholder="Search menu..." oninput="filterMenu()"></div>
+      <select class="form-input" id="catFilter" onchange="filterMenu()" style="width:160px;padding:8px 12px">
+        <option value="">All Categories</option>
+        <option>Main Course</option><option>Starters</option><option>Desserts</option><option>Beverages</option><option>Breads</option><option>Pizza</option><option>Soups</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="openMenuModal()">+ Add Item</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px" id="menuGrid"></div>
+</div>
+
+<!-- INVENTORY -->
+<div class="module-content" id="mod-inventory">
+  <div class="flex-between mb2">
+    <div class="search-bar"><span>🔍</span><input type="text" id="invSearch" placeholder="Search inventory..."></div>
+    <button class="btn btn-primary" onclick="openInvModal()">+ Add Item</button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+    <div class="panel"><div class="panel-header"><span class="panel-title">⚠️ Critical Alerts</span></div><div class="panel-body" id="critAlerts"></div></div>
+    <div class="panel"><div class="panel-header"><span class="panel-title">🤖 AI Reorder Suggestions</span></div><div class="panel-body" id="reorderSugg"></div></div>
+  </div>
+  <div class="panel"><div class="panel-body" style="padding:0"><table><thead><tr><th>Item</th><th>Category</th><th>Stock</th><th>Unit</th><th>Min Stock</th><th>Cost/Unit</th><th>Status</th><th>Actions</th></tr></thead><tbody id="invTable"></tbody></table></div></div>
+</div>
+
+<!-- STAFF -->
+<div class="module-content" id="mod-staff">
+  <div class="panel"><div class="panel-body" style="padding:0"><table><thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Phone</th><th>Rating</th><th>Status</th></tr></thead><tbody id="staffTable"></tbody></table></div></div>
+</div>
+
+<!-- SCHEDULE -->
+<div class="module-content" id="mod-schedule">
+  <div class="flex-between mb2">
+    <h3 style="font-family:'Syne',sans-serif">Staff Schedule</h3>
+    <button class="btn btn-primary" onclick="openScheduleModal()">+ Add Shift</button>
+  </div>
+  <div class="panel"><div class="panel-body" style="padding:0"><table><thead><tr><th>Staff Member</th><th>Date</th><th>Shift Start</th><th>Shift End</th><th>Role</th><th>Status</th></tr></thead><tbody id="scheduleTable"></tbody></table></div></div>
+</div>
+
+<!-- REVIEWS -->
+<div class="module-content" id="mod-reviews">
+  <div class="stat-grid g3" style="margin-bottom:24px">
+    <div class="stat-card green"><div class="stat-label">😊 Positive</div><div class="stat-val" id="r-pos">—</div></div>
+    <div class="stat-card yellow"><div class="stat-label">😐 Neutral</div><div class="stat-val" id="r-neu">—</div></div>
+    <div class="stat-card pink"><div class="stat-label">😞 Negative</div><div class="stat-val" id="r-neg">—</div></div>
+  </div>
+  <div class="panel"><div class="panel-header"><span class="panel-title">💬 Customer Reviews</span></div><div class="panel-body" id="reviewsList"></div></div>
+</div>
+
+<!-- REPORTS -->
+<div class="module-content" id="mod-reports">
+  <div class="stat-grid g3" style="margin-bottom:24px">
+    <div class="stat-card orange"><div class="stat-label">Menu Items</div><div class="stat-val" id="rep-menu">—</div></div>
+    <div class="stat-card green"><div class="stat-label">Staff Members</div><div class="stat-val" id="rep-staff">—</div></div>
+    <div class="stat-card blue"><div class="stat-label">Inventory Items</div><div class="stat-val" id="rep-inv">—</div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">📋 Kitchen Summary Report</span><button class="btn btn-sm btn-primary" onclick="printReport()">🖨️ Print</button></div>
+    <div class="panel-body" id="reportPanel"></div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal" id="menuModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box">
+    <h3>🍽️ Add Menu Item</h3>
+    <div class="form-group"><label>Item Name</label><input class="form-input" id="m-name" placeholder="e.g. Butter Chicken"></div>
+    <div class="form-group"><label>Description</label><textarea class="form-input" id="m-desc" rows="2" placeholder="Describe this dish..."></textarea></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Price (₹)</label><input class="form-input" type="number" id="m-price" placeholder="299"></div>
+      <div class="form-group"><label>Category</label><select class="form-input" id="m-cat"><option>Main Course</option><option>Starters</option><option>Desserts</option><option>Beverages</option><option>Breads</option><option>Pizza</option><option>Soups</option></select></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div class="form-group"><label>Emoji Icon</label><input class="form-input" id="m-emoji" placeholder="🍛" maxlength="4"></div>
+      <div class="form-group"><label>Prep Time (min)</label><input class="form-input" type="number" id="m-prep" placeholder="15"></div>
+      <div class="form-group"><label>Calories</label><input class="form-input" type="number" id="m-cal" placeholder="350"></div>
+    </div>
+    <div class="form-group"><label style="display:flex;align-items:center;gap:10px"><input type="checkbox" id="m-veg" checked style="accent-color:var(--green)"> Vegetarian Item</label></div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="addMenuItem()">Add to Menu</button>
+      <button class="btn btn-outline" onclick="document.getElementById('menuModal').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="invModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box">
+    <h3>📦 Add Inventory Item</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Item Name</label><input class="form-input" id="i-name" placeholder="e.g. Tomatoes"></div>
+      <div class="form-group"><label>Category</label><select class="form-input" id="i-cat"><option>Vegetables</option><option>Proteins</option><option>Dairy</option><option>Grains</option><option>Spices</option><option>Oils</option></select></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div class="form-group"><label>Quantity</label><input class="form-input" type="number" id="i-qty" placeholder="20"></div>
+      <div class="form-group"><label>Unit</label><select class="form-input" id="i-unit"><option>kg</option><option>litre</option><option>pieces</option><option>grams</option><option>packets</option></select></div>
+      <div class="form-group"><label>Min Stock</label><input class="form-input" type="number" id="i-min" placeholder="5"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Cost/Unit (₹)</label><input class="form-input" type="number" id="i-cost" placeholder="50"></div>
+      <div class="form-group"><label>Supplier</label><input class="form-input" id="i-supplier" placeholder="Supplier name"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="addInventory()">Add Item</button>
+      <button class="btn btn-outline" onclick="document.getElementById('invModal').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="schedModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box">
+    <h3>📅 Add Shift</h3>
+    <div class="form-group"><label>Staff Member ID</label><input class="form-input" id="sc-uid" placeholder="User ID"></div>
+    <div class="form-group"><label>Date</label><input class="form-input" type="date" id="sc-date"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Shift Start</label><input class="form-input" type="time" id="sc-start" value="09:00"></div>
+      <div class="form-group"><label>Shift End</label><input class="form-input" type="time" id="sc-end" value="17:00"></div>
+    </div>
+    <div class="form-group"><label>Role</label><select class="form-input" id="sc-role"><option value="chef">Chef</option><option value="delivery">Delivery</option><option value="helper">Helper</option></select></div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="addShift()">Add Shift</button>
+      <button class="btn btn-outline" onclick="document.getElementById('schedModal').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allMenuItems = [], allInventory = [], currentOrderFilter = '';
+
+async function loadOverview() {
+  const stats = await fetch('/api/kitchen/stats').then(r=>r.json());
+  document.getElementById('s-today').textContent = stats.today_orders;
+  document.getElementById('s-revenue').textContent = fmtCurrency(stats.today_revenue);
+  document.getElementById('s-pending').textContent = stats.pending_orders;
+  document.getElementById('s-preparing').textContent = stats.preparing_orders;
+  document.getElementById('s-alerts').textContent = stats.inventory_alerts;
+  document.getElementById('pendingBadge').textContent = stats.pending_orders;
+  document.getElementById('alertBadge').textContent = stats.inventory_alerts > 0 ? '!' : '';
+
+  new Chart(document.getElementById('revChart'), {type:'bar',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{label:'Revenue',data:stats.revenue_trend,backgroundColor:'rgba(255,107,53,0.7)',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#8a8680'}},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#8a8680',callback:v=>'₹'+Math.round(v/1000)+'k'}}}}});
+
+  const demand = await fetch('/api/kitchen/analytics').then(r=>r.json());
+  new Chart(document.getElementById('demandChart'), {type:'line',data:{labels:['D1','D2','D3','D4','D5','D6','D7'],datasets:[{label:'Orders',data:demand.demand_forecast,borderColor:'#06d6a0',backgroundColor:'rgba(6,214,160,0.1)',fill:true,tension:0.4,borderWidth:2,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#8a8680'}},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#8a8680'}}}}});
+
+  loadLiveOrders();
+  loadInventoryAlerts();
+}
+
+async function loadLiveOrders() {
+  const orders = await fetch('/api/kitchen/orders?status=pending').then(r=>r.json());
+  const container = document.getElementById('liveOrdersList');
+  if (!orders.length) { container.innerHTML = '<div class="empty" style="padding:30px"><div class="empty-icon">🛍️</div><div class="empty-text">No pending orders</div></div>'; return; }
+  container.innerHTML = orders.slice(0,8).map(o=>`
+    <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div><div style="font-size:13px;font-weight:700">${o.order_number}</div><div style="font-size:11px;color:var(--muted)">${o.customer_name} · ₹${o.total}</div></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge ${o.status}">${o.status}</span>
+        <button class="btn btn-sm btn-success" onclick="confirmOrder(${o.id})">✓ Accept</button>
+      </div>
+    </div>`).join('');
+}
+
+async function confirmOrder(id) {
+  await fetch(`/api/orders/${id}/status`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'confirmed'})});
+  showToast('✅ Order Confirmed',`Order accepted and queued`,'success');
+  loadLiveOrders(); loadOverview();
+}
+
+async function loadInventoryAlerts() {
+  const data = await fetch('/api/kitchen/inventory').then(r=>r.json());
+  const alerts = data.alerts || [];
+  const panel = document.getElementById('alertsPanel');
+  if (!alerts.length) { panel.innerHTML = '<div class="empty" style="padding:20px"><div class="empty-icon">✅</div><div class="empty-text">All stock levels are fine</div></div>'; return; }
+  panel.innerHTML = alerts.map(a=>`
+    <div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <div><div style="font-size:13px;font-weight:600;color:var(--pink)">⚠️ ${a.item}</div><div style="font-size:11px;color:var(--muted)">${a.quantity} ${a.unit} left · ${a.days_left} days remaining</div></div>
+      <div style="font-size:12px;color:var(--accent)">Reorder: ${a.reorder_qty} ${a.unit}</div>
+    </div>`).join('');
+}
+
+async function loadAnalytics() {
+  const data = await fetch('/api/kitchen/analytics').then(r=>r.json());
+  document.getElementById('a-prep').textContent = data.avg_prep_time + ' min';
+  document.getElementById('a-csat').textContent = data.customer_satisfaction + '★';
+  document.getElementById('a-waste').textContent = data.waste_index + '%';
+  new Chart(document.getElementById('hourlyChart'), {type:'bar',data:{labels:Array.from({length:24},(_,i)=>i+':00'),datasets:[{label:'Orders',data:data.hourly_orders,backgroundColor:'rgba(17,138,178,0.6)',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8a8680',maxTicksLimit:12}},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#8a8680'}}}}});
+  new Chart(document.getElementById('catChart'), {type:'doughnut',data:{labels:Object.keys(data.category_sales),datasets:[{data:Object.values(data.category_sales),backgroundColor:['#ff6b35','#ffd166','#06d6a0','#118ab2','#ef476f'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:'#8a8680',boxWidth:10,font:{size:11}}}}}});
+  new Chart(document.getElementById('weekRevChart'), {type:'line',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{label:'Revenue',data:data.weekly_revenue,borderColor:'#ffd166',backgroundColor:'rgba(255,209,102,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:3,pointBackgroundColor:'#ffd166'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#8a8680'}},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#8a8680',callback:v=>'₹'+Math.round(v/1000)+'k'}}}}});
+}
+
+async function loadOrders() {
+  const orders = await fetch('/api/kitchen/orders').then(r=>r.json());
+  renderOrders(orders);
+}
+
+function renderOrders(orders) {
+  const filtered = currentOrderFilter ? orders.filter(o=>o.status===currentOrderFilter) : orders;
+  document.getElementById('ordersTable').innerHTML = filtered.length ? filtered.map(o=>`
+    <tr>
+      <td><div style="font-weight:700;color:var(--accent)">${o.order_number}</div></td>
+      <td>${o.customer_name}</td>
+      <td style="font-size:12px">${Array.isArray(o.items)?o.items.map(i=>`${i.name}×${i.quantity}`).join(', '):'—'}</td>
+      <td style="font-weight:600">${fmtCurrency(o.total)}</td>
+      <td><span class="badge ${o.status}">${o.status}</span></td>
+      <td>${o.estimated_time} min</td>
+      <td>
+        ${o.status==='pending'?`<button class="btn btn-sm btn-success" onclick="updateStatus(${o.id},'confirmed')">Confirm</button>`:''}
+        ${o.status==='confirmed'?`<button class="btn btn-sm btn-primary" onclick="updateStatus(${o.id},'preparing')">Prepare</button>`:''}
+        ${o.status==='preparing'?`<button class="btn btn-sm btn-outline" onclick="updateStatus(${o.id},'ready')">Ready</button>`:''}
+        ${o.status==='pending'||o.status==='confirmed'?`<button class="btn btn-sm btn-danger" onclick="updateStatus(${o.id},'cancelled')">✕</button>`:''}
+      </td>
+    </tr>`).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:40px">No orders found</td></tr>';
+}
+
+async function updateStatus(id, status) {
+  await fetch(`/api/orders/${id}/status`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+  showToast('🔄 Status Updated',`Order moved to ${status}`,'success');
+  loadOrders();
+}
+
+async function filterOrders(status) {
+  currentOrderFilter = status;
+  loadOrders();
+}
+
+async function loadMenu() {
+  allMenuItems = await fetch('/api/kitchen/menu').then(r=>r.json());
+  renderMenu(allMenuItems);
+}
+
+function renderMenu(items) {
+  document.getElementById('menuGrid').innerHTML = items.map(i=>`
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;transition:all 0.3s" onmouseenter="this.style.borderColor='rgba(255,107,53,0.4)'" onmouseleave="this.style.borderColor='var(--border)'">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <span style="font-size:36px">${i.image_emoji}</span>
+        <div style="display:flex;gap:6px">
+          <span class="badge ${i.is_veg?'available':'cancelled'}">${i.is_veg?'🥦 Veg':'🍖 Non-Veg'}</span>
+          <button class="btn btn-sm btn-danger" onclick="deleteMenuItem(${i.id})">🗑️</button>
+        </div>
+      </div>
+      <div style="font-weight:700;font-size:15px;margin-bottom:4px">${i.name}</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">${i.description||'No description'}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--accent)">₹${i.price}</div>
+        <div style="font-size:11px;color:var(--muted)">⏱ ${i.prep_time}min · 🔥 ${i.calories}cal</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:10px">
+        <span style="font-size:12px;color:var(--muted)">${i.category}</span>
+        <span><span class="stars">★</span> <span style="font-size:12px">${i.rating}</span></span>
+      </div>
+      <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:11px;color:var(--muted)">${i.total_orders} orders</span>
+        <button class="btn btn-sm ${i.is_available?'btn-outline':'btn-success'}" onclick="toggleItem(${i.id},${!i.is_available})">${i.is_available?'Disable':'Enable'}</button>
+      </div>
+    </div>`).join('');
+}
+
+function filterMenu() {
+  const q = document.getElementById('menuSearch').value.toLowerCase();
+  const cat = document.getElementById('catFilter').value;
+  renderMenu(allMenuItems.filter(i=>(i.name.toLowerCase().includes(q))&&(!cat||i.category===cat)));
+}
+
+async function addMenuItem() {
+  const res = await fetch('/api/kitchen/menu',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:document.getElementById('m-name').value,description:document.getElementById('m-desc').value,price:parseFloat(document.getElementById('m-price').value),category:document.getElementById('m-cat').value,image_emoji:document.getElementById('m-emoji').value||'🍽️',prep_time:parseInt(document.getElementById('m-prep').value||15),calories:parseInt(document.getElementById('m-cal').value||300),is_veg:document.getElementById('m-veg').checked})});
+  const data = await res.json();
+  if(data.success){document.getElementById('menuModal').classList.remove('open');loadMenu();showToast('✅ Item Added','Menu item created','success');}
+}
+
+async function deleteMenuItem(id) {
+  if(!confirm('Remove this item from menu?')) return;
+  await fetch(`/api/kitchen/menu/${id}`,{method:'DELETE'});
+  loadMenu(); showToast('🗑️ Removed','Item removed from menu','info');
+}
+
+async function toggleItem(id, state) {
+  await fetch(`/api/kitchen/menu/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({is_available:state})});
+  loadMenu();
+}
+
+async function loadInventory() {
+  const data = await fetch('/api/kitchen/inventory').then(r=>r.json());
+  allInventory = data.items;
+  const alerts = data.alerts;
+  document.getElementById('critAlerts').innerHTML = alerts.length ? alerts.map(a=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><div><div style="font-size:13px;font-weight:600;color:var(--pink)">⚠️ ${a.item}</div><div style="font-size:11px;color:var(--muted)">${a.days_left} days remaining</div></div><div style="font-size:12px;color:var(--accent)">Need ${a.reorder_qty} units</div></div>`).join('') : '<div style="color:var(--green);font-size:13px;padding:10px">✅ All stock levels OK</div>';
+  document.getElementById('reorderSugg').innerHTML = alerts.slice(0,4).map(a=>`<div style="padding:10px;margin-bottom:8px;background:rgba(255,107,53,0.05);border:1px solid rgba(255,107,53,0.15);border-radius:8px"><div style="font-size:13px;font-weight:600">${a.item}</div><div style="font-size:11px;color:var(--muted);margin-top:3px">🤖 AI suggests ordering <strong>${Math.ceil(a.reorder_qty)}</strong> ${data.items.find(i=>i.item_name===a.item)?.unit||'units'}</div></div>`).join('') || '<div style="color:var(--muted);font-size:13px;padding:10px">No reorder needed</div>';
+  document.getElementById('invTable').innerHTML = allInventory.map(i=>`
+    <tr>
+      <td style="font-weight:600">${i.item_name}</td>
+      <td><span class="badge confirmed">${i.category}</span></td>
+      <td><div style="display:flex;align-items:center;gap:8px"><span style="font-weight:700;color:${i.is_low?'var(--pink)':'var(--green)'}">${i.quantity}</span><div class="mini-bar" style="width:60px"><div class="mini-bar-fill" style="width:${Math.min(100,i.quantity/50*100)}%;background:${i.is_low?'var(--pink)':'var(--grad)'}"></div></div></div></td>
+      <td>${i.unit}</td>
+      <td>${i.min_stock}</td>
+      <td>₹${i.unit_cost}</td>
+      <td><span class="badge ${i.is_low?'low':'ok'}">${i.is_low?'Low Stock':'OK'}</span></td>
+      <td><button class="btn btn-sm btn-success" onclick="restockItem(${i.id})">+ Restock</button></td>
+    </tr>`).join('');
+}
+
+async function restockItem(id) {
+  const qty = prompt('Enter restock quantity:');
+  if(!qty) return;
+  const item = allInventory.find(i=>i.id===id);
+  const newQty = (item.quantity || 0) + parseFloat(qty);
+  await fetch(`/api/kitchen/inventory/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({quantity:newQty})});
+  loadInventory(); showToast('📦 Restocked',`Added ${qty} units`,'success');
+}
+
+async function addInventory() {
+  const res = await fetch('/api/kitchen/inventory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_name:document.getElementById('i-name').value,category:document.getElementById('i-cat').value,quantity:parseFloat(document.getElementById('i-qty').value||0),unit:document.getElementById('i-unit').value,min_stock:parseFloat(document.getElementById('i-min').value||5),unit_cost:parseFloat(document.getElementById('i-cost').value||0),supplier:document.getElementById('i-supplier').value})});
+  const data = await res.json();
+  if(data.success){document.getElementById('invModal').classList.remove('open');loadInventory();showToast('✅ Added','Inventory item added','success');}
+}
+
+async function loadStaff() {
+  const staff = await fetch('/api/kitchen/staff').then(r=>r.json());
+  const roleIcon = {chef:'👨‍🍳',delivery:'🚴'};
+  document.getElementById('staffTable').innerHTML = staff.length ? staff.map(s=>`<tr><td><div style="font-weight:600">${roleIcon[s.role]||'👤'} ${s.name}</div></td><td><span class="badge confirmed">${s.role}</span></td><td style="font-size:12px;color:var(--muted)">${s.email}</td><td style="font-size:12px">${s.phone||'—'}</td><td><span class="stars">★</span> ${s.rating}</td><td><span class="badge ${s.status==='available'?'available':'busy'}">${s.status||'available'}</span></td></tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">No staff assigned yet</td></tr>';
+  document.getElementById('rep-staff').textContent = staff.length;
+}
+
+async function loadSchedule() {
+  const schedules = await fetch('/api/kitchen/schedule').then(r=>r.json());
+  document.getElementById('scheduleTable').innerHTML = schedules.length ? schedules.map(s=>`<tr><td>User #${s.user_id}</td><td>${s.shift_date}</td><td>${s.shift_start}</td><td>${s.shift_end}</td><td><span class="badge confirmed">${s.role}</span></td><td><span class="badge available">${s.status}</span></td></tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">No shifts scheduled</td></tr>';
+}
+
+async function addShift() {
+  const res = await fetch('/api/kitchen/schedule',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:parseInt(document.getElementById('sc-uid').value),shift_date:document.getElementById('sc-date').value,shift_start:document.getElementById('sc-start').value,shift_end:document.getElementById('sc-end').value,role:document.getElementById('sc-role').value})});
+  const data = await res.json();
+  if(data.success){document.getElementById('schedModal').classList.remove('open');loadSchedule();showToast('📅 Shift Added','Schedule updated','success');}
+}
+
+async function loadReviews() {
+  const pos = Math.floor(Math.random()*50)+40, neg = Math.floor(Math.random()*10)+2, neu = Math.floor(Math.random()*20)+10;
+  document.getElementById('r-pos').textContent = pos;
+  document.getElementById('r-neu').textContent = neu;
+  document.getElementById('r-neg').textContent = neg;
+  const reviews = [{name:'Priya S.',rating:5,comment:'Absolutely delicious! The butter chicken was perfect.',sentiment:'positive',time:'2h ago'},{name:'Rahul K.',rating:4,comment:'Good food, delivery was a bit late but worth it.',sentiment:'neutral',time:'4h ago'},{name:'Anita M.',rating:5,comment:'Best biryani I\'ve ever had. Will definitely order again!',sentiment:'positive',time:'6h ago'},{name:'Vikram R.',rating:2,comment:'Food was cold when it arrived. Disappointed.',sentiment:'negative',time:'8h ago'}];
+  const icons = {positive:'😊',neutral:'😐',negative:'😞'};
+  document.getElementById('reviewsList').innerHTML = reviews.map(r=>`<div style="padding:16px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div style="font-weight:600">${r.name}</div><div style="display:flex;gap:10px;align-items:center"><span>${icons[r.sentiment]}</span><span class="badge ${r.sentiment==='positive'?'available':r.sentiment==='negative'?'cancelled':'confirmed'}">${r.sentiment}</span><span style="font-size:11px;color:var(--muted)">${r.time}</span></div></div><div style="color:var(--accent2);font-size:13px;margin-bottom:6px">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div><div style="font-size:13px;color:var(--muted)">${r.comment}</div></div>`).join('');
+}
+
+async function loadReports() {
+  const [menu, inv] = await Promise.all([fetch('/api/kitchen/menu').then(r=>r.json()),fetch('/api/kitchen/inventory').then(r=>r.json())]);
+  document.getElementById('rep-menu').textContent = menu.length;
+  document.getElementById('rep-inv').textContent = inv.items?.length||0;
+  const stats = await fetch('/api/kitchen/stats').then(r=>r.json());
+  document.getElementById('reportPanel').innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:20px"><div style="text-align:center;padding:20px;background:var(--surface2);border-radius:12px"><div style="font-size:32px;font-weight:800;font-family:'Syne',sans-serif;color:var(--accent)">${stats.today_orders}</div><div style="font-size:12px;color:var(--muted)">Today's Orders</div></div><div style="text-align:center;padding:20px;background:var(--surface2);border-radius:12px"><div style="font-size:32px;font-weight:800;font-family:'Syne',sans-serif;color:var(--green)">${fmtCurrency(stats.today_revenue)}</div><div style="font-size:12px;color:var(--muted)">Today's Revenue</div></div><div style="text-align:center;padding:20px;background:var(--surface2);border-radius:12px"><div style="font-size:32px;font-weight:800;font-family:'Syne',sans-serif;color:var(--blue)">${stats.inventory_alerts}</div><div style="font-size:12px;color:var(--muted)">Stock Alerts</div></div></div><div style="font-size:13px;color:var(--muted);line-height:1.8"><strong style="color:var(--text)">Kitchen: </strong>${stats.kitchen?.name||'Your Kitchen'} · <strong style="color:var(--text)">Rating: </strong>${stats.kitchen?.rating||'—'}★ · <strong style="color:var(--text)">Total Orders: </strong>${fmtNum(stats.kitchen?.total_orders||0)}</div>`;
+}
+
+function printReport() { window.print(); }
+
+const loaders = {'mod-overview':loadOverview,'mod-analytics':loadAnalytics,'mod-orders':loadOrders,'mod-menu':loadMenu,'mod-inventory':loadInventory,'mod-staff':loadStaff,'mod-schedule':loadSchedule,'mod-reviews':loadReviews,'mod-reports':loadReports};
+const origSwitch = window.switchModule;
+window.switchModule = function(id,btn){
+  document.querySelectorAll('.module-content').forEach(m=>m.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const mod=document.getElementById(id); if(mod){mod.classList.add('active');if(btn)btn.classList.add('active');}
+  if(loaders[id]) loaders[id]();
+};
+function openMenuModal(){document.getElementById('menuModal').classList.add('open');}
+function openInvModal(){document.getElementById('invModal').classList.add('open');}
+function openScheduleModal(){document.getElementById('schedModal').classList.add('open');}
+
+loadOverview();
+// Auto-refresh live orders every 30s
+setInterval(loadLiveOrders, 30000);
+</script>
+{% endblock %}

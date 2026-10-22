@@ -1,0 +1,299 @@
+{% extends "dashboards/base.html" %}
+{% block title %}Delivery Dashboard{% endblock %}
+{% block page_title %}Delivery Hub{% endblock %}
+{% block page_subtitle %}Your orders, routes & earnings{% endblock %}
+
+{% block nav_items %}
+<div class="nav-section">
+  <div class="nav-section-label">Live</div>
+  <div class="nav-item active" onclick="switchModule('mod-available',this)"><span class="nav-icon">🟢</span>Available Orders<span class="nav-badge" id="availBadge">0</span></div>
+  <div class="nav-item" onclick="switchModule('mod-active',this)"><span class="nav-icon">🚴</span>Active Delivery<span class="nav-badge" id="activeBadge">0</span></div>
+</div>
+<div class="nav-section">
+  <div class="nav-section-label">Tools</div>
+  <div class="nav-item" onclick="switchModule('mod-route',this)"><span class="nav-icon">🗺️</span>Route Optimizer</div>
+  <div class="nav-item" onclick="switchModule('mod-history',this)"><span class="nav-icon">📋</span>Delivery History</div>
+</div>
+<div class="nav-section">
+  <div class="nav-section-label">Personal</div>
+  <div class="nav-item" onclick="switchModule('mod-earnings',this)"><span class="nav-icon">💰</span>Earnings</div>
+  <div class="nav-item" onclick="switchModule('mod-stats',this)"><span class="nav-icon">📊</span>My Stats</div>
+  <div class="nav-item" onclick="switchModule('mod-profile',this)"><span class="nav-icon">👤</span>Profile & Status</div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- AVAILABLE ORDERS -->
+<div class="module-content active" id="mod-available">
+  <div class="stat-grid g4" style="margin-bottom:24px">
+    <div class="stat-card green"><div class="stat-icon">📦</div><div class="stat-label">Available</div><div class="stat-val" id="av-count">—</div></div>
+    <div class="stat-card orange"><div class="stat-icon">🚴</div><div class="stat-label">My Active</div><div class="stat-val" id="av-active">—</div></div>
+    <div class="stat-card blue"><div class="stat-icon">✅</div><div class="stat-label">Today Done</div><div class="stat-val" id="av-done">—</div></div>
+    <div class="stat-card yellow"><div class="stat-icon">💰</div><div class="stat-label">Today Earnings</div><div class="stat-val" id="av-earnings">—</div></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h3 style="font-family:'Syne',sans-serif">📦 Ready for Pickup</h3>
+    <div style="display:flex;gap:10px;align-items:center">
+      <span id="myStatus" style="padding:6px 14px;border-radius:100px;font-size:12px;font-weight:600;background:rgba(6,214,160,0.15);color:var(--green)">🟢 Available</span>
+      <button class="btn btn-outline btn-sm" onclick="toggleStatus()">Toggle Status</button>
+      <button class="btn btn-sm" style="background:var(--surface2);border:1px solid var(--border)" onclick="loadAvailableOrders()">🔄 Refresh</button>
+    </div>
+  </div>
+  <div id="availableOrdersList"></div>
+</div>
+
+<!-- ACTIVE DELIVERY -->
+<div class="module-content" id="mod-active">
+  <div id="activeDeliveries"></div>
+</div>
+
+<!-- ROUTE OPTIMIZER -->
+<div class="module-content" id="mod-route">
+  <div class="panel" style="margin-bottom:20px">
+    <div class="panel-header"><span class="panel-title">🤖 AI Route Optimizer</span><span class="badge available">Powered by AI</span></div>
+    <div class="panel-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
+        <div style="padding:16px;background:var(--surface2);border-radius:12px;text-align:center"><div style="font-size:28px;font-weight:800;font-family:'Syne',sans-serif;color:var(--green)">2.4 km</div><div style="font-size:12px;color:var(--muted)">Optimized Distance</div></div>
+        <div style="padding:16px;background:var(--surface2);border-radius:12px;text-align:center"><div style="font-size:28px;font-weight:800;font-family:'Syne',sans-serif;color:var(--accent)">18 min</div><div style="font-size:12px;color:var(--muted)">Estimated Time</div></div>
+        <div style="padding:16px;background:var(--surface2);border-radius:12px;text-align:center"><div style="font-size:28px;font-weight:800;font-family:'Syne',sans-serif;color:var(--blue)">35%</div><div style="font-size:12px;color:var(--muted)">Time Saved by AI</div></div>
+      </div>
+      <div style="background:var(--bg);border-radius:16px;height:280px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);position:relative;overflow:hidden">
+        <canvas id="routeCanvas" width="600" height="280" style="width:100%;height:100%"></canvas>
+      </div>
+      <div style="margin-top:16px" id="routeSteps"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">📍 Navigation Tips</span></div>
+    <div class="panel-body">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:12px;align-items:flex-start"><span style="font-size:20px">🚦</span><div><div style="font-size:13px;font-weight:600">Avoid peak traffic</div><div style="font-size:12px;color:var(--muted)">12-2PM and 6-9PM have heavy congestion on main roads</div></div></div>
+        <div style="display:flex;gap:12px;align-items:flex-start"><span style="font-size:20px">⚡</span><div><div style="font-size:13px;font-weight:600">Nearest pickup first</div><div style="font-size:12px;color:var(--muted)">AI calculates shortest path using nearest-neighbor algorithm</div></div></div>
+        <div style="display:flex;gap:12px;align-items:flex-start"><span style="font-size:20px">📱</span><div><div style="font-size:13px;font-weight:600">Contact customer</div><div style="font-size:12px;color:var(--muted)">Call before arriving to confirm delivery location</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DELIVERY HISTORY -->
+<div class="module-content" id="mod-history">
+  <div class="panel"><div class="panel-body" style="padding:0">
+    <table><thead><tr><th>Order #</th><th>Customer</th><th>Kitchen</th><th>Amount</th><th>Earned</th><th>Rating</th><th>Time</th></tr></thead>
+    <tbody id="historyTable"></tbody></table>
+  </div></div>
+</div>
+
+<!-- EARNINGS -->
+<div class="module-content" id="mod-earnings">
+  <div class="stat-grid g3" style="margin-bottom:24px">
+    <div class="stat-card green"><div class="stat-icon">💰</div><div class="stat-label">Total Earnings</div><div class="stat-val" id="e-total">—</div></div>
+    <div class="stat-card orange"><div class="stat-icon">📅</div><div class="stat-label">This Month</div><div class="stat-val" id="e-month">—</div></div>
+    <div class="stat-card blue"><div class="stat-icon">🏦</div><div class="stat-label">Pending Payout</div><div class="stat-val" id="e-pending">—</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div class="panel"><div class="panel-header"><span class="panel-title">📊 Daily Earnings (30 Days)</span></div><div class="panel-body"><div class="chart-wrap"><canvas id="earningsChart"></canvas></div></div></div>
+    <div class="panel"><div class="panel-header"><span class="panel-title">💡 Earning Tips</span></div>
+      <div class="panel-body">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="padding:12px;background:rgba(255,107,53,0.06);border-radius:10px;border:1px solid rgba(255,107,53,0.15)"><div style="font-size:13px;font-weight:700;color:var(--accent)">🔥 Peak Hours Bonus</div><div style="font-size:12px;color:var(--muted);margin-top:4px">Work 12-2PM and 7-10PM for 1.5× delivery bonus</div></div>
+          <div style="padding:12px;background:rgba(6,214,160,0.06);border-radius:10px;border:1px solid rgba(6,214,160,0.15)"><div style="font-size:13px;font-weight:700;color:var(--green)">⭐ Rating Bonus</div><div style="font-size:12px;color:var(--muted);margin-top:4px">Maintain 4.8+ rating for ₹50 weekly bonus</div></div>
+          <div style="padding:12px;background:rgba(17,138,178,0.06);border-radius:10px;border:1px solid rgba(17,138,178,0.15)"><div style="font-size:13px;font-weight:700;color:var(--blue)">🎯 Target Bonus</div><div style="font-size:12px;color:var(--muted);margin-top:4px">Complete 25 deliveries/week for ₹200 bonus</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MY STATS -->
+<div class="module-content" id="mod-stats">
+  <div class="stat-grid g4" style="margin-bottom:24px">
+    <div class="stat-card orange"><div class="stat-icon">🚴</div><div class="stat-label">Total Deliveries</div><div class="stat-val" id="st-total">—</div></div>
+    <div class="stat-card green"><div class="stat-icon">📅</div><div class="stat-label">Today</div><div class="stat-val" id="st-today">—</div></div>
+    <div class="stat-card blue"><div class="stat-icon">⭐</div><div class="stat-label">Rating</div><div class="stat-val" id="st-rating">—</div></div>
+    <div class="stat-card yellow"><div class="stat-icon">⏱️</div><div class="stat-label">Avg Delivery</div><div class="stat-val" id="st-avg">—</div></div>
+  </div>
+  <div class="panel"><div class="panel-header"><span class="panel-title">📊 Weekly Deliveries</span></div><div class="panel-body"><div class="chart-wrap"><canvas id="weekChart"></canvas></div></div></div>
+</div>
+
+<!-- PROFILE -->
+<div class="module-content" id="mod-profile">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">👤 My Profile</span></div>
+      <div class="panel-body">
+        <div style="text-align:center;margin-bottom:24px">
+          <div style="font-size:64px;margin-bottom:10px">🚴</div>
+          <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800">{{ user.name }}</div>
+          <div style="font-size:13px;color:var(--muted)">{{ user.email }}</div>
+        </div>
+        <div class="form-group"><label>Display Name</label><input class="form-input" value="{{ user.name }}"></div>
+        <div class="form-group"><label>Phone</label><input class="form-input" value="{{ user.phone or '' }}"></div>
+        <div class="form-group"><label>Vehicle Type</label><select class="form-input"><option>Bicycle</option><option selected>Motorcycle</option><option>Scooter</option></select></div>
+        <button class="btn btn-primary" style="width:100%">Save Profile</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">🔄 Availability Status</span></div>
+      <div class="panel-body">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <button class="btn" style="width:100%;padding:16px;background:rgba(6,214,160,0.15);border:1px solid rgba(6,214,160,0.3);color:var(--green);font-size:15px" onclick="setStatus('available')">🟢 Set Available</button>
+          <button class="btn" style="width:100%;padding:16px;background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.3);color:var(--accent);font-size:15px" onclick="setStatus('busy')">🔴 Set Busy</button>
+          <button class="btn" style="width:100%;padding:16px;background:rgba(255,209,102,0.15);border:1px solid rgba(255,209,102,0.3);color:var(--accent2);font-size:15px" onclick="setStatus('offline')">⚫ Go Offline</button>
+        </div>
+        <div style="margin-top:20px;padding:16px;background:var(--surface2);border-radius:12px">
+          <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Current Status</div>
+          <div id="statusDisplay" style="font-size:18px;font-weight:700">🟢 Available</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let agentStatus = 'available';
+
+async function loadAvailableOrders() {
+  const data = await fetch('/api/delivery/orders').then(r=>r.json());
+  const stats = await fetch('/api/delivery/stats').then(r=>r.json());
+  document.getElementById('av-count').textContent = data.available.length;
+  document.getElementById('av-active').textContent = data.assigned.length;
+  document.getElementById('av-done').textContent = stats.today_deliveries;
+  document.getElementById('av-earnings').textContent = '₹' + (stats.today_deliveries * 30);
+  document.getElementById('availBadge').textContent = data.available.length;
+  document.getElementById('activeBadge').textContent = data.assigned.length;
+
+  const el = document.getElementById('availableOrdersList');
+  if (!data.available.length) {
+    el.innerHTML = '<div class="empty" style="padding:60px"><div class="empty-icon">📦</div><div class="empty-text">No orders available right now. Check back soon!</div></div>';
+    return;
+  }
+  el.innerHTML = data.available.map(o=>`
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:14px;transition:all 0.3s">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--accent)">${o.order_number}</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:3px">${o.kitchen_name}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--green)">₹30</div>
+          <div style="font-size:11px;color:var(--muted)">Your earnings</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
+        <div style="background:var(--surface2);padding:10px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--muted)">Order Value</div><div style="font-size:14px;font-weight:700;color:var(--accent)">${fmtCurrency(o.total)}</div></div>
+        <div style="background:var(--surface2);padding:10px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--muted)">Est. Time</div><div style="font-size:14px;font-weight:700;color:var(--blue)">${o.estimated_time} min</div></div>
+        <div style="background:var(--surface2);padding:10px;border-radius:8px;text-align:center"><div style="font-size:11px;color:var(--muted)">Customer</div><div style="font-size:12px;font-weight:600">${o.customer_name}</div></div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px;display:flex;gap:6px;align-items:center"><span>📍</span>${o.delivery_address||'Address on pickup'}</div>
+      <button class="btn btn-primary" style="width:100%;padding:13px;font-size:15px" onclick="acceptOrder(${o.id},'${o.order_number}')">🚴 Accept & Pick Up</button>
+    </div>`).join('');
+}
+
+async function acceptOrder(id, num) {
+  const res = await fetch(`/api/delivery/accept/${id}`,{method:'POST'});
+  const data = await res.json();
+  if(data.success){showToast('✅ Order Accepted!',`${num} — You're on your way!`,'success');loadAvailableOrders();loadActiveDeliveries();}
+  else {showToast('❌ Error',data.error||'Could not accept order','error');}
+}
+
+async function loadActiveDeliveries() {
+  const data = await fetch('/api/delivery/orders').then(r=>r.json());
+  const el = document.getElementById('activeDeliveries');
+  if (!data.assigned.length) {
+    el.innerHTML = '<div class="empty" style="padding:80px"><div class="empty-icon">🚴</div><div class="empty-text">No active deliveries. Accept an order to start!</div></div>';
+    return;
+  }
+  el.innerHTML = data.assigned.map(o=>`
+    <div style="background:var(--surface);border:1px solid rgba(255,107,53,0.3);border-radius:20px;padding:24px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:16px">
+        <div><div style="font-size:20px;font-weight:800;font-family:'Syne',sans-serif;color:var(--accent)">${o.order_number}</div><div style="font-size:13px;color:var(--muted)">${o.kitchen_name}</div></div>
+        <span class="badge picked_up">🚴 In Transit</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+        <div style="padding:14px;background:var(--surface2);border-radius:12px"><div style="font-size:11px;color:var(--muted);margin-bottom:4px">Customer</div><div style="font-weight:600">${o.customer_name}</div></div>
+        <div style="padding:14px;background:var(--surface2);border-radius:12px"><div style="font-size:11px;color:var(--muted);margin-bottom:4px">Order Value</div><div style="font-weight:600;color:var(--accent)">${fmtCurrency(o.total)}</div></div>
+      </div>
+      <div style="padding:12px;background:rgba(6,214,160,0.05);border:1px solid rgba(6,214,160,0.2);border-radius:10px;margin-bottom:16px"><span style="font-size:13px">📍 ${o.delivery_address||'Address not specified'}</span></div>
+      <button class="btn btn-success" style="width:100%;padding:14px;font-size:15px" onclick="completeDelivery(${o.id},'${o.order_number}')">✅ Mark as Delivered</button>
+    </div>`).join('');
+}
+
+async function completeDelivery(id, num) {
+  if(!confirm(`Confirm delivery of ${num}?`)) return;
+  const res = await fetch(`/api/delivery/complete/${id}`,{method:'POST'});
+  const data = await res.json();
+  if(data.success){showToast('🎉 Delivered!',`${num} completed. ₹30 earned!`,'success');loadActiveDeliveries();loadAvailableOrders();}
+}
+
+async function loadStats() {
+  const data = await fetch('/api/delivery/stats').then(r=>r.json());
+  document.getElementById('st-total').textContent = data.total_deliveries;
+  document.getElementById('st-today').textContent = data.today_deliveries;
+  document.getElementById('st-rating').textContent = data.rating + '★';
+  document.getElementById('st-avg').textContent = data.avg_delivery_time + ' min';
+  new Chart(document.getElementById('weekChart'),{type:'bar',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{label:'Deliveries',data:data.weekly_deliveries,backgroundColor:'rgba(255,107,53,0.7)',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#8a8680'}},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#8a8680'}}}}});
+}
+
+async function loadEarnings() {
+  const data = await fetch('/api/delivery/earnings').then(r=>r.json());
+  document.getElementById('e-total').textContent = fmtCurrency(data.total);
+  document.getElementById('e-month').textContent = fmtCurrency(data.this_month);
+  document.getElementById('e-pending').textContent = fmtCurrency(data.pending_payout);
+  new Chart(document.getElementById('earningsChart'),{type:'bar',data:{labels:Array.from({length:30},(_,i)=>`D${i+1}`),datasets:[{label:'Earnings',data:data.daily_earnings,backgroundColor:'rgba(6,214,160,0.6)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#8a8680',callback:v=>'₹'+v}}}}});
+}
+
+function loadRoute() {
+  const canvas = document.getElementById('routeCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth; canvas.height = 280;
+  const w = canvas.width, h = 280;
+  ctx.fillStyle = '#111114'; ctx.fillRect(0,0,w,h);
+  const points = [{x:.15,y:.3,label:'You',color:'#06d6a0'},{x:.35,y:.6,label:'Kitchen 1',color:'#ff6b35'},{x:.55,y:.25,label:'Kitchen 2',color:'#ffd166'},{x:.75,y:.7,label:'Drop 1',color:'#118ab2'},{x:.88,y:.4,label:'Drop 2',color:'#ef476f'}];
+  ctx.strokeStyle = 'rgba(255,107,53,0.4)'; ctx.lineWidth = 2; ctx.setLineDash([6,4]);
+  ctx.beginPath();
+  points.forEach((p,i)=>{ const px=p.x*w, py=p.y*h; i===0?ctx.moveTo(px,py):ctx.lineTo(px,py); });
+  ctx.stroke(); ctx.setLineDash([]);
+  points.forEach(p=>{
+    const px=p.x*w, py=p.y*h;
+    ctx.beginPath(); ctx.arc(px,py,12,0,Math.PI*2);
+    ctx.fillStyle = p.color+'33'; ctx.fill();
+    ctx.strokeStyle = p.color; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle=p.color; ctx.font='bold 11px DM Sans'; ctx.textAlign='center';
+    ctx.fillText(p.label, px, py+26);
+  });
+  document.getElementById('routeSteps').innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">${points.map((p,i)=>`<div style="padding:6px 14px;background:${p.color}15;border:1px solid ${p.color}44;border-radius:100px;font-size:12px;color:${p.color}">${i+1}. ${p.label}</div>`).join('<span style="color:var(--muted);display:flex;align-items:center">→</span>')}</div>`;
+}
+
+async function setStatus(status) {
+  agentStatus = status;
+  await fetch('/api/delivery/status',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+  const icons = {available:'🟢',busy:'🔴',offline:'⚫'};
+  document.getElementById('statusDisplay').textContent = `${icons[status]} ${status.charAt(0).toUpperCase()+status.slice(1)}`;
+  document.getElementById('myStatus').textContent = `${icons[status]} ${status.charAt(0).toUpperCase()+status.slice(1)}`;
+  showToast('🔄 Status Updated',`You are now ${status}`,'info');
+}
+
+async function toggleStatus() {
+  const newStatus = agentStatus === 'available' ? 'busy' : 'available';
+  await setStatus(newStatus);
+}
+
+function loadHistory() {
+  const sample = Array.from({length:10},(_,i)=>({num:`CK202400${i+10}`,customer:'Customer '+String.fromCharCode(65+i),kitchen:'Kitchen '+(i%3+1),amount:Math.floor(Math.random()*500)+200,rating:Math.random()>0.2?5:4}));
+  document.getElementById('historyTable').innerHTML = sample.map(o=>`<tr><td style="font-weight:700;color:var(--accent)">${o.num}</td><td>${o.customer}</td><td>${o.kitchen}</td><td>${fmtCurrency(o.amount)}</td><td style="color:var(--green);font-weight:700">₹30</td><td><span class="stars">${'★'.repeat(o.rating)}</span></td><td style="font-size:12px;color:var(--muted)">${new Date(Date.now()-Math.random()*86400000).toLocaleString()}</td></tr>`).join('');
+}
+
+const loaders = {'mod-available':loadAvailableOrders,'mod-active':loadActiveDeliveries,'mod-route':loadRoute,'mod-history':loadHistory,'mod-earnings':loadEarnings,'mod-stats':loadStats,'mod-profile':()=>{}};
+window.switchModule = function(id,btn){
+  document.querySelectorAll('.module-content').forEach(m=>m.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const mod=document.getElementById(id);if(mod){mod.classList.add('active');if(btn)btn.classList.add('active');}
+  if(loaders[id]) loaders[id]();
+};
+
+loadAvailableOrders();
+setInterval(loadAvailableOrders, 20000);
+</script>
+{% endblock %}
